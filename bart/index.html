@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balloon Analogue Risk Task (BART)</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<script>
+    const config = {
+        type: Phaser.AUTO,
+        backgroundColor: '#f0f0f0',
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        },
+        scale: {
+            //mode: Phaser.Scale.ENVELOP,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+            //width: 1920,
+            height: 720
+        }
+    };
+
+    const balloonColors = ['0x0000ff', '0xffff00', '0xffa500'];
+    const balloonDurabilities = [128, 32, 8];
+    let currentScore = 0;
+    let totalScore = 0;
+    let balloonSize = 1;
+    let maxPumps = 0;
+    let currentColorIndex = 0;
+    let currentBalloonIndex = 0;
+    let balloon;
+    let currentScoreText;
+    let totalScoreText;
+
+    let balloonSchedule = [];
+
+
+
+    let balloonDurabilityState = [];
+
+    let popSound;
+    let inflateSound;
+    const game = new Phaser.Game(config);
+
+
+    function shuffleArray(array) {
+        for (var i = array.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    function initializeSchedule() {
+
+        let schedule = Array(10).fill(0).concat(Array(10).fill(1)).concat(Array(10).fill(2));
+        shuffleArray(schedule);
+
+        schedule = schedule.concat(Array(20).fill(0)).concat(Array(20).fill(1)).concat(Array(20).fill(2));
+
+        balloonSchedule = schedule;
+    }
+
+
+    function preload() {
+        this.load.image('balloon', '/assets/balloon.png');
+        this.load.audio('balloon-pop', '/assets/balloon-pop-93436.mp3');
+        this.load.audio('balloon-inflate', '/assets/balloon-inflate-1-184052.mp3');
+        this.load.audio('cash-reward', '/assets/cash-register-kaching-sound-effect-125042.mp3');
+    }
+
+    function create() {
+        this.add.text(20, 20, 'BART - Balloon Analogue Risk Task', { fontSize: '24px', fill: '#000' });
+
+        balloon = this.add.image(400, 300, 'balloon').setScale(balloonSize).setTint(balloonColors[currentColorIndex]);
+
+        popSound = this.sound.add('balloon-pop');
+        inflateSound = this.sound.add('balloon-inflate');
+        cashRewardSound = this.sound.add('cash-reward');
+
+        currentScoreText = this.add.text(20, 60, '', { fontSize: '18px', fill: '#000' });
+        setCurrentScore(currentScore);
+
+        totalScoreText = this.add.text(20, 90, 'Total Score: R$ 0', { fontSize: '18px', fill: '#000' });
+
+        this.add.text(20, 680, 'Press SPACE to pump the balloon, and ENTER to collect its current value', { fontSize: '18px', fill: '#000' });
+
+        this.input.keyboard.on('keydown-SPACE', pumpBalloon, this);
+        this.input.keyboard.on('keydown-ENTER', collectScore, this);
+
+        initializeSchedule();
+        console.log(balloonSchedule);
+
+        resetBalloon();
+    }
+
+    function update() {
+    }
+
+    function setCurrentScore(score) {
+        currentScoreText.setText(`Current Balloon Score: R$${score.toFixed(2)}`);
+    }
+
+    function pumpBalloon() {
+        currentScore += 0.05;
+        setCurrentScore(currentScore);
+        balloonSize += 0.01;
+        balloon.setScale(balloonSize);
+
+        inflateSound.play();
+
+        const m = getRandomItem(balloonDurabilityState);
+        if (m === 0) {
+            popSound.play();
+            resetBalloon();
+        }
+    }
+
+    function collectScore() {
+        totalScore += currentScore;
+        cashRewardSound.play();
+
+        totalScoreText.setText(`Total Score: R$ ${totalScore}`);
+        resetBalloon();
+    }
+
+    function resetBalloon() {
+
+        if (currentBalloonIndex >= balloonSchedule.length) {
+            this.add.text(20, 120, 'You have completed the task. Press F5 to restart.', { fontSize: '18px', fill: '#000' });
+            return;
+        }
+
+        balloonSize = 0.5;
+        currentScore = 0;
+        setCurrentScore(currentScore);
+
+        // Define the balloon color and durability;
+        currentColorIndex = balloonSchedule[currentBalloonIndex];
+
+        // Reset the balloon durability state;
+        balloonDurabilityState = Array.from(Array(balloonDurabilities[currentColorIndex]).keys());
+
+        balloon.setOrigin(0.5, 1.0);
+        balloon.setPosition(400, 600);
+        balloon.setScale(balloonSize);
+        balloon.setTint(balloonColors[currentColorIndex]);
+
+        currentBalloonIndex++;
+
+    }
+
+
+
+function getRandomItem(arr) {
+
+    // get random index value
+    const randomIndex = Math.floor(Math.random() * arr.length);
+
+    // get random item
+    const item = arr[randomIndex];
+
+     arr.splice(randomIndex, 1);
+
+    return item;
+}
+</script>
+</body>
+</html>
+
