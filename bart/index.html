@@ -65,12 +65,35 @@
         this.load.audio('balloon-pop', '/assets/balloon-pop-93436.mp3');
         this.load.audio('balloon-inflate', '/assets/balloon-inflate-1-184052.mp3');
         this.load.audio('cash-reward', '/assets/cash-register-kaching-sound-effect-125042.mp3');
+        this.load.image('button', '/assets/button.png'); // Assuming you have button image in the assets
     }
 
+    function createButtons() {
+        // Create buttons using Phaser
+        let pumpButton = this.add.image(800, 600, 'button').setInteractive();
+        let collectButton = this.add.image(930, 600, 'button').setInteractive();
+
+        pumpButton.setScale(0.2);
+        collectButton.setScale(0.2);
+
+        this.add.text(780, 610, 'Pump', { fontSize: '18px', fill: '#c5c5c5' });
+        this.add.text(895, 610, 'Collect', { fontSize: '18px', fill: '#c5c5c5' });
+
+        pumpButton.on('pointerdown', pumpBalloon, this);
+        collectButton.on('pointerdown', collectScore, this);
+
+    }
+    
     function create() {
         this.add.text(20, 20, 'BART - Balloon Analogue Risk Task', { fontSize: '24px', fill: '#000' });
 
-        balloon = this.add.image(400, 300, 'balloon').setScale(balloonSize).setTint(balloonColors[currentColorIndex]);
+        balloon = this.add.image(400, 300, 'balloon')
+                      .setScale(balloonSize)
+                      .setTint(balloonColors[currentColorIndex])
+                      .setInteractive();
+
+        // Make the balloon interactive and pump on click
+        balloon.on('pointerdown', pumpBalloon, this);
 
         popSound = this.sound.add('balloon-pop');
         inflateSound = this.sound.add('balloon-inflate');
@@ -82,6 +105,9 @@
 
         this.input.keyboard.on('keydown-SPACE', pumpBalloon, this);
         this.input.keyboard.on('keydown-ENTER', collectScore, this);
+
+        createButtons.bind(this)();
+
 
         initializeSchedule();
         console.log(balloonSchedule);
