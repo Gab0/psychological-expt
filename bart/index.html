@@ -8,27 +8,61 @@
     <style>
         body {
             margin: 0;
+            background-color: #f0f0f0;
+            overflow: hidden;
         }
     </style>
 </head>
 <body>
 <script>
+
+     function resize() {
+      var canvas = document.querySelector("canvas");
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+      var windowRatio = windowWidth / windowHeight;
+      var gameRatio = game.config.width / game.config.height;
+      if (windowRatio < gameRatio) {
+        canvas.style.width = windowWidth + "px";
+        canvas.style.height = (windowWidth / gameRatio) + "px";
+      } else {
+        canvas.style.width = (windowHeight * gameRatio) + "px";
+        canvas.style.height = windowHeight + "px";
+      }
+    }
     const config = {
         type: Phaser.AUTO,
+        antialias: true,
         backgroundColor: '#f0f0f0',
         scene: {
             preload: preload,
             create: create,
             update: update
         },
+        fps: {
+            min: 60,
+            target: 60,
+        },
+
         scale: {
-            autoCenter: Phaser.Scale.CENTER_BOTH,
-            height: 720
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER,
         }
     };
 
-    const balloonColors = ['0x0000ff', '0xffff00', '0xffa500'];
+    // Game properties;
+    const balloonColors = ['0x3366ff', '0xffff00', '0xffa077'];
     const balloonDurabilities = [128, 32, 8];
+
+
+    const normalFont = { fontSize: '18px', fill: '#000' };
+    const largerFont = { fontSize: '22px', fill: '#101010' };
+
+    const gameConstants = {
+        balloonInitialSize: 0.5,
+        balloonPumpRate: 0.05,
+    };
+    // Buffers;
     let currentScore = 0;
     let totalScore = 0;
     let balloonSize = 1;
@@ -36,14 +70,21 @@
     let currentColorIndex = 0;
     let currentBalloonIndex = 0;
     let balloon;
+    let pumping = false;
     let currentScoreText;
     let totalScoreText;
+    let balloonCounterText;
+    let lastBalloonScoreText;
+    let lastPumpTime = 0;
     let balloonSchedule = [];
     let balloonDurabilityState = [];
     let popSound;
     let inflateSound;
-    const game = new Phaser.Game(config);
+    let gameOver = false;
+    let pumpCount = 0;
 
+    const game = new Phaser.Game(config);
+    resize();
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -65,23 +106,43 @@
         this.load.audio('balloon-pop', '/assets/balloon-pop-93436.mp3');
         this.load.audio('balloon-inflate', '/assets/balloon-inflate-1-184052.mp3');
         this.load.audio('cash-reward', '/assets/cash-register-kaching-sound-effect-125042.mp3');
-        this.load.image('button', '/assets/button.png'); // Assuming you have button image in the assets
+        this.load.image('button', '/assets/button.png');
+        this.load.image('piggy', '/assets/piggy.png');
     }
 
-    function createButtons() {
+    function createPumpButton() {
         // Create buttons using Phaser
         let pumpButton = this.add.image(800, 600, 'button').setInteractive();
-        let collectButton = this.add.image(930, 600, 'button').setInteractive();
 
         pumpButton.setScale(0.2);
-        collectButton.setScale(0.2);
 
         this.add.text(780, 610, 'Pump', { fontSize: '18px', fill: '#c5c5c5' });
-        this.add.text(895, 610, 'Collect', { fontSize: '18px', fill: '#c5c5c5' });
 
-        pumpButton.on('pointerdown', pumpBalloon, this);
+        pumpButton.on('pointerdown', enablePumping, this);
+        pumpButton.on('pointerup', disablePumping, this);
+
+
+    }
+
+    function createCollectButton() {
+        let collectButton = this.add.image(930, 600, 'piggy')
+                                .setTint("0x000000")
+                                .setInteractive();
+
+        collectButton.setScale(0.2);
+
+        this.add.text(890, 610, 'Collect', { fontSize: '18px', fill: '#c5c5c5' });
+
         collectButton.on('pointerdown', collectScore, this);
-
+    }
+ function enablePumping() {
+     if (!pumping) {
+        inflateSound.play();
+     }
+        pumping = true;
+    }
+    function disablePumping() {
+        pumping = false;
     }
     
     function create() {
@@ -93,64 +154,107 @@
                       .setInteractive();
 
         // Make the balloon interactive and pump on click
-        balloon.on('pointerdown', pumpBalloon, this);
+        balloon.on('pointerdown', enablePumping, this);
+        balloon.on('pointerup', disablePumping, this);
 
         popSound = this.sound.add('balloon-pop');
         inflateSound = this.sound.add('balloon-inflate');
         cashRewardSound = this.sound.add('cash-reward');
-        currentScoreText = this.add.text(20, 60, '', { fontSize: '18px', fill: '#000' });
+        currentScoreText = this.add.text(20, 60, '', normalFont);
         setCurrentScore(currentScore);
-        totalScoreText = this.add.text(20, 90, 'Total Score: R$ 0', { fontSize: '18px', fill: '#000' });
-        this.add.text(20, 680, 'Press SPACE to pump the balloon, and ENTER to collect its current value', { fontSize: '18px', fill: '#000' });
 
-        this.input.keyboard.on('keydown-SPACE', pumpBalloon, this);
+
+        lastBalloonScoreText = this.add.text(20, 120, '', normalFont);
+        setLastBalloonScore(0);
+
+        totalScoreText = this.add.text(20, 90, '', normalFont);
+        setTotalScore(totalScore);
+
+        this.add.text(20, 680, 'Press SPACE to pump the balloon, and ENTER to collect its current value', normalFont);
+
+        balloonCounterText = this.add.text(20, 150, '', largerFont);
+
+        this.input.keyboard.on('keydown-SPACE', enablePumping, this);
+        this.input.keyboard.on('keyup-SPACE', disablePumping, this);
         this.input.keyboard.on('keydown-ENTER', collectScore, this);
 
-        createButtons.bind(this)();
-
+        createCollectButton.bind(this)();
 
         initializeSchedule();
         console.log(balloonSchedule);
 
         resetBalloon();
     }
+    
+    function update(time, delta) {
 
-    function update() {
+        if (time - lastPumpTime > 10) {
+        if (pumping) {
+            protoPumpBalloon(time - lastPumpTime);
+        }}
+
+        lastPumpTime = time;
+        if (gameOver) {
+            this.add.text(20, 120, 'You have completed the task. Press F5 to restart.', normalFont);
+            return;
+        }
     }
 
     function setCurrentScore(score) {
         currentScoreText.setText(`Current Balloon Score: R$${score.toFixed(2)}`);
     }
 
+    function setLastBalloonScore(score) {
+        lastBalloonScoreText.setText(`Last Balloon Score: R$${score.toFixed(2)}`);
+    }
+
+    function setTotalScore(score) {
+        totalScoreText.setText(`Total Score: R$${totalScore.toFixed(2)}`);
+    }
+
+    function protoPumpBalloon(amt) {
+        balloonSize += 0.0002 * amt;
+        balloon.setScale(balloonSize);
+        const k = Math.round((balloonSize - gameConstants.balloonInitialSize) * 10);
+        if (k > pumpCount) {
+            pumpCount = k;
+            pumpBalloon();
+        }
+    }
+
     function pumpBalloon() {
+
         currentScore += 0.05;
         setCurrentScore(currentScore);
-
-        balloonSize += 0.01;
-        balloon.setScale(balloonSize);
-
-        inflateSound.play();
-
         const m = getRandomItem(balloonDurabilityState);
         if (m === 0) {
-            popSound.play();
-            resetBalloon();
+            popBalloon();
         }
+    }
+
+    function popBalloon() {
+        popSound.play();
+        resetBalloon();
+        disablePumping();
+        setLastBalloonScore(0);
     }
 
     function collectScore() {
         totalScore += currentScore;
+        setLastBalloonScore(currentScore);
         cashRewardSound.play();
-        totalScoreText.setText(`Total Score: R$ ${totalScore}`);
+
+        setTotalScore(totalScore);
         resetBalloon();
     }
 
     function resetBalloon() {
-        if (currentBalloonIndex >= balloonSchedule.length) {
-            this.add.text(20, 120, 'You have completed the task. Press F5 to restart.', { fontSize: '18px', fill: '#000' });
-            return;
-        }
-        balloonSize = 0.5;
+
+
+        disablePumping();
+
+        balloonSize = gameConstants.balloonInitialSize;
+        pumpCount = 0;
         currentScore = 0;
         setCurrentScore(currentScore);
         currentColorIndex = balloonSchedule[currentBalloonIndex];
@@ -160,6 +264,11 @@
         balloon.setScale(balloonSize);
         balloon.setTint(balloonColors[currentColorIndex]);
         currentBalloonIndex++;
+        balloonCounterText.setText(`Balloon ${currentBalloonIndex}/90`);
+
+        if (currentBalloonIndex >= balloonSchedule.length) {
+            gameOver = true;
+        }
     }
 
     function getRandomItem(arr) {
