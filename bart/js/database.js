@@ -5,7 +5,7 @@ const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 const db = supabase.createClient(db_url, token);
 
 export async function getHighscores() {
-  const {data, error} = await db.from('bart_highscores').select().neq("nickname", null).limit(5);
+  const {data, error} = await db.from('bart_highscores').select().neq("nickname", null).limit(15);
   console.log(error);
   console.log(data);
   return data;

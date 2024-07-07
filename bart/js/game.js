@@ -343,10 +343,11 @@ function setGameOver() {
 
 function displayHighscores(scores) {
 
-    const highscoreText = scene.add.text(W * 0.30, H * 0.3, 'Highscores:', normalFont);
-    let y = H * 0.35;
+    const highscoreText = scene.add.text(W * 0.22, H * 0.23, 'Highscores:', normalFont);
+    let y = H * 0.28;
     scores.map((score, i) => {
-        scene.add.text(W * 0.36, y + 40 * i, `${i + 1}. ${score.nickname}: R$${score.score.toFixed(2)}`, normalFont);
+        scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, normalFont);
+        scene.add.text(W * 0.64, y + 40 * i, `R$${score.score.toFixed(2)}`, normalFont);
     });
 }
 
