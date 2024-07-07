@@ -20,12 +20,8 @@ export async function update_database(score, balloons, balloonSchedule) {
     timestamps: timestamps
   }
 
-  const { data, error } = await db.from('bart_runs').upsert(payload);
-
-  // const res = await db.rpc(
-  //   'balloon_update',
-  //   payload
-  // );
+  const res = await db.rpc('bartupdate', payload);
+  console.log(res);
 }
 
 function makeid(length) {
