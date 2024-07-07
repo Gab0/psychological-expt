@@ -1,6 +1,6 @@
 // Expects 'Phaser' to be a global variable;
 
-import { update_database } from './database.js';
+import { update_database, nickname } from './database.js';
 
 
 function resize() {
@@ -50,7 +50,7 @@ const balloonDurabilities = [128, 32, 8];
 
 const normalFont = { fontSize: '40px', fill: '#000', backgroundColor: '#f0f0f0' };
 const largerFont = { fontSize: '44px', fill: '#101010', backgroundColor: '#f0f0f0' };
-const largestFont = { fontSize: '48px', fill: '#000', fontWeight: 'bold', backgroundColor: '#f0f0f0' };
+const largestFont = { fontSize: '52px', fill: '#000', fontWeight: 'bold' };
 
 const gameConstants = {
     balloonInitialSize: 1.0,
@@ -182,6 +182,12 @@ function create() {
     currentScoreText = this.add.text(20, 60, '', normalFont);
     setCurrentScore(currentScore);
 
+    const m = this.add.text(
+        W * 0.75,
+        H * 0.05,
+        `${nickname}`,
+        normalFont
+    );
 
     lastBalloonScoreText = this.add.text(20, 120, '', normalFont);
     setLastBalloonScore(0);
@@ -224,7 +230,7 @@ function update(time, delta) {
 }
 
 function setCurrentScore(score) {
-    currentScoreText.setText(`Current Balloon Score: R$${score.toFixed(2)}`);
+    //currentScoreText.setText(`Current Balloon Score: R$${score.toFixed(2)}`);
 }
 
 function setLastBalloonScore(score) {
