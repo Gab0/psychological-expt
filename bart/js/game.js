@@ -1,6 +1,6 @@
 // Expects 'Phaser' to be a global variable;
 
-import { update_database, nickname } from './database.js';
+import { update_database, nickname, getHighscores } from './database.js';
 
 
 function resize() {
@@ -57,6 +57,8 @@ const gameConstants = {
     balloonSizeIncreaseRate: 0.00005,
     balloonPumpMultiplier: 50,
 };
+
+let scene;
 
 // Buffers;
 let currentScore = 0;
@@ -162,6 +164,8 @@ function disablePumping() {
 }
 
 function create() {
+    scene = this;
+   
     this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(0.5);
     this.add.text(20, 20, 'BART - Balloon Analogue Risk Task', largestFont);
 
@@ -330,7 +334,22 @@ function setGameOver() {
     currentScoreText.destroy();
 
     helperText.setText(`You have completed the task. You have won R$${totalScore.toFixed(2)}!Press F5 to try again.`);
+
+    const scores = getHighscores().then((scores) => {
+        displayHighscores(scores);
+    })
+
 }
+
+function displayHighscores(scores) {
+
+    const highscoreText = scene.add.text(W * 0.30, H * 0.3, 'Highscores:', normalFont);
+    let y = H * 0.35;
+    scores.map((score, i) => {
+        scene.add.text(W * 0.36, y + 40 * i, `${i + 1}. ${score.nickname}: R$${score.score.toFixed(2)}`, normalFont);
+    });
+}
+
 function getRandomItem(arr) {
     const randomIndex = Math.floor(Math.random() * arr.length);
     const item = arr[randomIndex];
