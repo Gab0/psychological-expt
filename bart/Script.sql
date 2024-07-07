@@ -4,8 +4,6 @@ GRANT ALL on public.bart_runs TO anon;
 
 
 REVOKE ALL on public.bart_runs from anon;
-GRANT INSERT on public.bart_runs TO anon;
-GRANT UPDATE on public.bart_runs TO anon;
 GRANT SELECT on public.bart_runs TO anon;
 
 
@@ -35,16 +33,18 @@ END;
 $$ LANGUAGE plpgsql security definer;
 
 
-CREATE VIEW bart_highscores AS
-SELECT score, balloons, timestamps
-FROM public.bart_runs;
+CREATE or replace VIEW bart_highscores AS
+SELECT score, balloons, timestamps, nickname
+FROM public.bart_runs
+order by score DESC;
 
 REVOKE ALL on bart_highscores from anon;
 GRANT SELECT on bart_highscores TO anon;
-
-
 
 grant EXECUTE on function bartupdate to anon;
 DROP FUNCTION bartupdate(character varying,double precision,text,text,text,text);
 NOTIFY pgrst, 'reload schema';
 REVOKE UPSERT on public.bart_runs from anon;
+
+
+select * from bart_highscores;
