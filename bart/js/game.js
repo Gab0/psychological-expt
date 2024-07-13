@@ -41,27 +41,36 @@ class InstructionsScene extends Phaser.Scene {
         Bem-vindo ao Teste de Análise de Risco com Balões! 
         Neste jogo, você será convidado a inflar um balão
         e a decidir quando parar e coletar o dinheiro acumulado.
-        Aqui está como funciona:
+
+        Instruções:
         Para inflar o balão, clique diretamente no balão.
         Cada clique aumentará o tamanho do balão e o valor do dinheiro acumulado.
         Para coletar o dinheiro, clique no cofre de porquinho.
-        Ao fazer isso, o dinheiro acumulado até aquele ponto será guardado com segurança.
+        Ao fazer isso, o dinheiro acumulado no até aquele ponto será guardado com segurança.
         Mas atenção! O balão pode estourar a qualquer momento.
         Se isso acontecer, você perderá todo o dinheiro acumulado naquele balão.
+
         Seu objetivo é encontrar o equilíbrio entre inflar o balão para ganhar mais dinheiro
          e saber a hora certa de parar para não perder tudo.
+
+		Balões de cores diferentes possuem durabilidades diferentes!
+
         Boa sorte e divirta-se! Pressione ENTER ou clique para continuar.`;
 
-		const textStyle = {
-			fontSize: '24px',
+		const instructionsTextStyle = {
+			fontSize: '40px',
 			fill: '#ffffff',
 			wordWrap: { width: this.cameras.main.width - 100 },
 		};
 
-		const text = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, instructionsText, textStyle).setOrigin(0.5);
+		const text = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, instructionsText, instructionsTextStyle).setOrigin(0.5);
 
 		// Permite que o jogador avance pressionando ENTER ou clicando na tela
 		this.input.keyboard.on('keydown-ENTER', () => {
+			this.scene.start('GameScene');
+		});
+    
+		this.input.keyboard.on('keydown-SPACE', () => {
 			this.scene.start('GameScene');
 		});
 
@@ -112,9 +121,9 @@ class GameScene extends Phaser.Scene {
 		currentScoreText = this.add.text(20, 60, '', normalFont);
 		setCurrentScore(currentScore);
 
-		const m = this.add.text(W * 0.75, H * 0.05, `${nickname}`, normalFont);
+		const nick = this.add.text(W * 0.7, H * 0.05, `${nickname}`, normalFont);
 
-		lastBalloonScoreText = this.add.text(20, 120, '', normalFont);
+		lastBalloonScoreText = this.add.text(W * 0.01, H * 0.1, '', normalFont);
 		setLastBalloonScore(0);
 
 		const message_keyboard = 'Press SPACE to pump the balloon, and ENTER to collect its current value';
@@ -377,9 +386,9 @@ function setGameOver() {
 
 	helperText.setText(`You have completed the task. You have won R$${totalScore.toFixed(2)}! Press F5 to try again.`);
 
-	const scores = getHighscores().then((scores) => {
+	setTimeout(getHighscores().then((scores) => {
 		displayHighscores(scores);
-	});
+	}), 1000);
 }
 
 function displayHighscores(scores) {
