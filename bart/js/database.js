@@ -32,7 +32,7 @@ export async function getHighscores() {
   return data;
 }
 
-export async function update_database(score, balloons, balloonSchedule) {
+export async function update_database(score, balloons, explosions, balloonSchedule) {
 
   console.log("Updating database");
 
@@ -42,6 +42,7 @@ export async function update_database(score, balloons, balloonSchedule) {
     p_id: run_id,
     p_score: score,
     p_balloons: balloons,
+    p_explosions: explosions,
     p_balloonschedule: balloonSchedule,
     p_useragent: window.navigator.userAgent,
     p_timestamps: timestamps,

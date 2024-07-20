@@ -7,6 +7,7 @@ CREATE OR REPLACE FUNCTION bartupdate(
     p_id varchar,
     p_score float8,
     p_balloons text,
+    p_explosions text,
     p_balloonschedule text,
     p_useragent text,
     p_timestamps text,
@@ -15,7 +16,7 @@ CREATE OR REPLACE FUNCTION bartupdate(
 RETURNS VOID AS $$
 BEGIN
     INSERT INTO public.bart_runs
-    VALUES (p_id, p_score, p_balloons, p_balloonschedule, p_useragent, p_timestamps, p_nickname)
+    VALUES (p_id, p_score, p_balloons, p_balloonschedule, p_useragent, p_timestamps, p_nickname, p_explosions, null)
     ON CONFLICT (id) 
     DO UPDATE set
     	id = EXCLUDED.id,
@@ -24,7 +25,10 @@ BEGIN
 	    balloonschedule = EXCLUDED.balloonschedule,
 	    useragent = EXCLUDED.useragent,
 	    timestamps = EXCLUDED.timestamps,
-	    nickname = EXCLUDED.nickname;
+	    nickname = EXCLUDED.nickname,
+	    explosions = EXCLUDED.explosions,
+	    user_nickname = EXCLUDED.user_nickname;
+
 END;
 $$ LANGUAGE plpgsql security definer;
 

@@ -125,7 +125,7 @@ class GameScene extends Phaser.Scene {
 
 		totalScoreText = this.add.text(W * 0.85, H * 0.82, '', { fontSize: '50px', fill: '#fff' });
 		setTotalScore(totalScore);
-		initializeSchedule();
+		initializeBalloonSchedule();
 		console.log(balloonSchedule);
 
 		resetBalloon();
@@ -210,6 +210,7 @@ let gameOver = false;
 let pumpCount = 0;
 
 let balloonScores = [];
+let balloonExplosions = [];
 
 const game = new Phaser.Game(config);
 
@@ -226,7 +227,7 @@ function shuffleArray(array) {
 	}
 }
 
-function initializeSchedule() {
+function initializeBalloonSchedule() {
 	let schedule = Array(10).fill(0).concat(Array(10).fill(1)).concat(Array(10).fill(2));
 	shuffleArray(schedule);
 	schedule = schedule.concat(Array(20).fill(0)).concat(Array(20).fill(1)).concat(Array(20).fill(2));
@@ -304,17 +305,20 @@ function pumpBalloon() {
 
 function popBalloon() {
 	popSound.play();
+
+	balloonScores.push(0);
+    balloonExplosions.push(currentScore);
+	updateDatabase();
+   
 	resetBalloon();
 	disablePumping();
 	setLastBalloonScore(0);
 
 	currentScore = 0;
-	updateDatabase();
 }
 
 function updateDatabase() {
-	balloonScores.push(currentScore);
-	update_database(totalScore, balloonScores, balloonSchedule);
+	update_database(totalScore, balloonScores, balloonExplosions, balloonSchedule);
 }
 
 function collectScore() {
@@ -332,6 +336,9 @@ function collectScore() {
 	cashRewardSound.play();
 
 	setTotalScore(totalScore);
+
+	balloonScores.push(currentScore);
+    balloonExplosions.push(0);
 	updateDatabase();
 
 	resetBalloon();
@@ -372,7 +379,7 @@ function setGameOver() {
 
 	setTimeout(getHighscores().then((scores) => {
 		displayHighscores(scores);
-	}), 1000);
+	}), 2000);
 }
 
 function displayHighscores(scores) {
