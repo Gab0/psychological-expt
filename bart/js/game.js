@@ -1,6 +1,7 @@
 // Expects 'Phaser' to be a global variable;
 
-import { update_database, nickname, getHighscores } from './database.js';
+import { update_database, nickname, getHighscores, fetchMessages } from './database.js';
+
 
 function resize() {
 	var canvas = document.querySelector('canvas');
@@ -16,6 +17,9 @@ function resize() {
 		canvas.style.height = windowHeight + 'px';
 	}
 }
+
+const messageMap = await fetchMessages("pt-br");
+console.log(messageMap);
 
 // Instructions Scene
 class InstructionsScene extends Phaser.Scene {
@@ -37,26 +41,7 @@ class InstructionsScene extends Phaser.Scene {
 		graphics.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
 
 		// Centraliza e adiciona o texto de instruções
-		const instructionsText = `
-        Bem-vindo ao Teste de Análise de Risco com Balões! 
-        Neste jogo, você será convidado a inflar um balão
-        e a decidir quando parar e coletar o dinheiro acumulado.
-
-        Instruções:
-        Para inflar o balão, clique diretamente no balão.
-        Cada clique aumentará o tamanho do balão e o valor do dinheiro acumulado.
-        Para coletar o dinheiro, clique no cofre de porquinho.
-        Ao fazer isso, o dinheiro acumulado no até aquele ponto será guardado com segurança.
-        Mas atenção! O balão pode estourar a qualquer momento.
-        Se isso acontecer, você perderá todo o dinheiro acumulado naquele balão.
-
-        Seu objetivo é encontrar o equilíbrio entre inflar o balão para ganhar mais dinheiro
-         e saber a hora certa de parar para não perder tudo.
-
-		Balões de cores diferentes possuem durabilidades diferentes!
-
-        Boa sorte e divirta-se! Pressione ENTER ou clique para continuar.`;
-
+		const instructionsText = messageMap["BRIEFING"];
 		const instructionsTextStyle = {
 			fontSize: '40px',
 			fill: '#ffffff',
@@ -101,7 +86,7 @@ class GameScene extends Phaser.Scene {
 		scene = this;
 
 		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(0.5);
-		this.add.text(20, 20, 'BART - Balloon Analogue Risk Task', largestFont);
+		this.add.text(20, 20, messageMap["TITLE"], largestFont);
 
 		balloon = this.add
 			.image(W * 0.5, H * 0.9, 'balloon')
@@ -128,9 +113,9 @@ class GameScene extends Phaser.Scene {
 
 		const message_keyboard = 'Press SPACE to pump the balloon, and ENTER to collect its current value';
 		const message_touch = 'Tap the balloon to pump it, and tap the piggy bank to collect its current value';
-		helperText = this.add.text(W * 0.01, H * 0.93, message_touch, normalFont);
+		helperText = this.add.text(W * 0.01, H * 0.91, messageMap["HELP_POINTER"], normalFont);
 
-		balloonCounterText = this.add.text(20, 150, '', largerFont);
+		balloonCounterText = this.add.text(20, H * 0.2, '', largerFont);
 
 		this.input.keyboard.on('keydown-SPACE', enablePumping, this);
 		this.input.keyboard.on('keyup-SPACE', disablePumping, this);
@@ -159,7 +144,6 @@ class GameScene extends Phaser.Scene {
 
 		lastPumpTime = time;
 		if (gameOver) {
-			this.add.text(20, 120, 'You have completed the task. Press F5 to restart.', normalFont);
 			return;
 		}
 	}
@@ -384,7 +368,7 @@ function setGameOver() {
 	balloonCounterText.destroy();
 	currentScoreText.destroy();
 
-	helperText.setText(`You have completed the task. You have won R$${totalScore.toFixed(2)}! Press F5 to try again.`);
+	helperText.setText(messageMap["GAME_OVER"]);
 
 	setTimeout(getHighscores().then((scores) => {
 		displayHighscores(scores);
@@ -392,7 +376,7 @@ function setGameOver() {
 }
 
 function displayHighscores(scores) {
-	const highscoreText = scene.add.text(W * 0.22, H * 0.23, 'Highscores:', normalFont);
+	const highscoreText = scene.add.text(W * 0.22, H * 0.23, messageMap["HIGHSCORES_TITLE"], normalFont);
 	let y = H * 0.28;
 	scores.map((score, i) => {
 		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, normalFont);

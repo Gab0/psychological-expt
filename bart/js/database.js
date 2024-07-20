@@ -4,6 +4,27 @@ const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 
 const db = supabase.createClient(db_url, token);
 
+
+
+function processMessageData(query_result) {
+
+  const messageMap = {};
+
+  query_result.map((res) => {
+    messageMap[res.identifier] = res.message;
+  });
+
+  return messageMap;
+}
+
+export async function fetchMessages(language) {
+  const {data, error} = await db.from('interface_messages')
+                                .select("*")
+                                .eq('language', language);
+  return processMessageData(data);
+}
+
+
 export async function getHighscores() {
   const {data, error} = await db.from('bart_highscores').select().neq("nickname", null).limit(15);
   console.log(error);
