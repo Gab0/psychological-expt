@@ -22,8 +22,8 @@ const messageMap = await fetchMessages("pt-br");
 console.log(messageMap);
 
 //const root = document.body.getAttribute("data-root") || "";
-const root = window.location.href;
-
+const root = window.location.href.replace(/\/$/, "");
+console.log("root", root);
 
 // Instructions Scene
 class InstructionsScene extends Phaser.Scene {
