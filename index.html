@@ -7,12 +7,12 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            margin: 5em;
+            padding: 1em;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: 150vh;
             background-color: #f0f0f0;
         }
         .container {
@@ -47,19 +47,50 @@
         .links a:hover {
             color: #0056b3;
         }
+        hr {
+        	margin: 2em;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Psychological Experiments</h1>
-        <p>Welcome to our research hub. Choose an experiment to participate in:</p>
+        <p>Welcome to our research hub. </p>
+        <p>Here we develop psychological experiments. <br>Choose an experiment to participate in:</p>
         <ul class="links">
             <li><a href="/bart">Balloon Analogue Risk Task (BART)</a></li>
             <li><a href="/tmt">Trail Making Test (TMT)</a></li>
             <li><a href="/hanoi">Tower of Hanoi</a></li>
             <li><a href="/srtt">Serial Reaction Time Task (SRTT)</a></li>
         </ul>
-    </div>
+<br>
+
+Contact: <a href="mailto:gabriel_scf@hotmail.com">gabriel_scf@hotmail.com</a>
+
+<hr>
+<h1>Feedback</h1>
+
+        
+<div id="disqus_thread"></div>
+<script>
+    /**
+    *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+    *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables    */
+    /*
+    var disqus_config = function () {
+    this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+    */
+    (function() { // DON'T EDIT BELOW THIS LINE
+    var d = document, s = d.createElement('script');
+    s.src = 'https://psychological-experiments.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
 </body>
 </html>
  
