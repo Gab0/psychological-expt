@@ -21,6 +21,10 @@ function resize() {
 const messageMap = await fetchMessages("pt-br");
 console.log(messageMap);
 
+//const root = document.body.getAttribute("data-root") || "";
+const root = window.location.href;
+
+
 // Instructions Scene
 class InstructionsScene extends Phaser.Scene {
 	constructor() {
@@ -28,7 +32,7 @@ class InstructionsScene extends Phaser.Scene {
 	}
 
 	preload() {
-		this.load.image('background', '/assets/fields.jpg');
+		this.load.image('background', root + '/assets/fields.jpg');
 	}
 
 	create() {
@@ -71,15 +75,15 @@ class GameScene extends Phaser.Scene {
 	}
 
 	preload() {
-		this.load.audio('balloon-pop', '/assets/balloon-pop-93436.mp3');
-		this.load.audio('balloon-inflate', '/assets/balloon-inflate-1-184052.mp3');
-		this.load.audio('cash-reward', '/assets/cash-register-kaching-sound-effect-125042.mp3');
-		this.load.audio('thump', '/assets/thump-2-79980.mp3');
+		this.load.audio('balloon-pop', root + '/assets/balloon-pop-93436.mp3');
+		this.load.audio('balloon-inflate', root + '/assets/balloon-inflate-1-184052.mp3');
+		this.load.audio('cash-reward', root + '/assets/cash-register-kaching-sound-effect-125042.mp3');
+		this.load.audio('thump', root + '/assets/thump-2-79980.mp3');
 
-		this.load.image('balloon', '/assets/balloon.png');
-		this.load.image('button', '/assets/button.png');
-		this.load.image('piggy', '/assets/piggy.png');
-		this.load.image('background', '/assets/fields.jpg');
+		this.load.image('balloon', root + '/assets/balloon.png');
+		this.load.image('button', root + '/assets/button.png');
+		this.load.image('piggy', root + '/assets/piggy.png');
+		this.load.image('background', root + '/assets/fields.jpg');
 	}
 
 	create() {
