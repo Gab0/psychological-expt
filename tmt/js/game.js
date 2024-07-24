@@ -1,16 +1,21 @@
 document.title = "Trail Making Test (TMT)";
 
+
 class TMTScene extends Phaser.Scene {
     constructor() {
         super({ key: 'TMTScene' });
-        this.circleData = [
-            { x: 100, y: 150, num: 1 },
-            { x: 300, y: 200, num: 2 },
-            { x: 500, y: 100, num: 3 },
-            { x: 200, y: 400, num: 4 },
-            { x: 400, y: 300, num: 5 }
-        ];
+        this.circleData = [...Array(25).keys()].map(
+            (value) => {
+                return {
+                    x: Phaser.Math.Between(50, 750),
+                    y: Phaser.Math.Between(50, 550),
+                    num: value + 1
+                }
+            });
+
         this.currentCircle = 1;
+
+        this.isDrawing = false;
     }
 
     preload() {
@@ -18,19 +23,30 @@ class TMTScene extends Phaser.Scene {
     }
 
     create() {
-        this.graphics = this.add.graphics({ lineStyle: { width: 4, color: 0x00ff00 } });
         this.circleGroup = this.physics.add.group();
 
         this.circleData.forEach(data => {
-            let circle = this.circleGroup.create(data.x, data.y, 'circle').setInteractive();
-            circle.num = data.num;
-            circle.setScale(0.1); // Adjust size
-            circle.on('pointerdown', this.checkCircle, this);
+            this.createCircle(data.x, data.y, data.num);
         });
+
+    }
+
+    createCircle(x, y, number) {
+        let graphics = this.add.graphics({ fillStyle: { color: 0xffffff } });
+        const circleRadius = 30;
+        const circle = graphics.fillCircle(x, y, circleRadius);
+        //circle.setOrigin(0.5, 0.5);
+
+        const text = this.add.text(x, y, number, { fontSize: '32px', fill: '#000' });
+        text.setOrigin(0.5, 0.5);
+        circle.setInteractive();
+        circle.on('pointerdown', this.checkCircle, this);
+        circle.num = number;
     }
 
     checkCircle(circle) {
         if (circle.num === this.currentCircle) {
+            console.log("OK");
             circle.setTint(0x00ff00);
             this.currentCircle++;
             this.drawLine(circle);
