@@ -1,6 +1,10 @@
 // Expects 'Phaser' to be a global variable;
 
-import { update_database, nickname, getHighscores, fetchMessages } from './database.js';
+import { update_database, getHighscores, fetchMessages } from './database.js';
+import { nickname, PsyExpBaseConfig } from '../../psyexp_core.js';
+
+const required = [Phaser];
+//.map(type => (type === 'undefined')).some(Boolean);
 
 
 function resize() {
@@ -153,23 +157,7 @@ class GameScene extends Phaser.Scene {
 	}
 }
 
-const config = {
-	type: Phaser.WEBGL,
-	antialias: true,
-	width: 1920,
-	height: 1000,
-	backgroundColor: '#f0f0f0',
-	scene: [InstructionsScene, GameScene], // Include InstructionsScene and GameScene
-	fps: {
-		min: 60,
-		target: 60,
-	},
-	scale: {
-		mode: Phaser.Scale.FIT,
-		autoCenter: Phaser.Scale.CENTER,
-		orientation: 'landscape',
-	},
-};
+const config = PsyExpBaseConfig([InstructionsScene, GameScene]);
 
 // Game properties;
 const balloonColors = ['0x3366ff', '0xffff00', '0xffa077'];
