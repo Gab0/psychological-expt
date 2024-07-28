@@ -133,5 +133,18 @@ function getElapsedTime() {
     return ((new Date() - startTime) / 1000).toFixed(2);
 }
 
-    checkWinCondition();
+async function updateDatabase() {
+
+    const res = await db.from('hanoi_runs').insert({
+        id: run_id,
+        useragent: window.navigator.userAgent,
+        nickname: nickname,
+        nb_disk: diskCount,
+        nb_move: moveCount,
+        elapsed_time: getElapsedTime(),
+        timestamps: timestamps
+    });
+
+    console.log(res);
+
 }
