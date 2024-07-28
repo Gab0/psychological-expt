@@ -1,14 +1,11 @@
 
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    scene: {
+import { PsyExpBaseConfig, db, run_id, nickname } from '../../psyexp_core.js';
+
+const config = PsyExpBaseConfig({
         preload: preload,
         create: create,
         update: update
-    }
-};
+});
 
 const game = new Phaser.Game(config);
 
