@@ -1,4 +1,20 @@
+
+CREATE TABLE bart_runs
+(
+    id character varying NOT NULL,
+    score double precision NULL,
+    balloons text NULL,
+    balloonschedule text NULL,
+    useragent character varying NULL,
+    timestamps character varying NULL,
+    nickname character varying NULL,
+    explosions text NULL,
+    user_nickname text NULL
+);
+
 ALTER TABLE bart_runs ADD PRIMARY KEY (id);
+
+
 
 REVOKE ALL on public.bart_runs from anon;
 
