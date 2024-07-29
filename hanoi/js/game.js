@@ -1,17 +1,5 @@
 
-import { PsyExpBaseConfig, db, run_id, nickname } from '../../psyexp_core.js';
-
-const config = PsyExpBaseConfig({
-        preload: preload,
-        create: create,
-        update: update
-});
-
-const game = new Phaser.Game(config);
-
-const W = game.config.width;
-const H = game.config.height;
-const Y = H * 0.8;
+import { PsyExpBaseConfig, db, run_id, nickname, fetchMessages } from '../../psyexp_core.js';
 
 let poles = [];
 let disks = [];
@@ -23,15 +11,60 @@ let timerText;
 let startTime;
 let diskCount = 3;  // Default number of disks
 
-const pole_pos = [W * 0.33, W * 0.5, W * 0.66];
+const normalFont = { fontSize: '40px', fill: '#000', backgroundColor: '#f0f0f0' };
 
-function preload() {
-    this.load.image('disk1', 'disk1.png');
-    this.load.image('disk2', 'disk2.png');
-    this.load.image('disk3', 'disk3.png');
+let scene = null;
+const messageMap = await fetchMessages("pt-br");
+
+class Briefing extends Phaser.Scene {
+
+	constructor() {
+		super({ key: 'Briefing' });
+	}
+
+    create() {
+        this.add.text(W * 0.5, H * 0.1, 'Tower of Hanoi', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
+        this.add.text(W * 0.5, H * 0.5, messageMap["BRIEFING_1"], { fontSize: '50px', fill: '#ff0000' }).setOrigin(0.5);
+
+		this.input.on('pointerdown', () => {
+			this.scene.start('Briefing2');
+		});
+    }
 }
 
-function create() {
+class Briefing2 extends Phaser.Scene {
+
+    constructor() {
+        super({ key: 'Briefing2' });
+    }
+
+    create() {
+        this.add.text(W * 0.5, H * 0.5, messageMap["BRIEFING_2"], { fontSize: '50px', fill: '#ff0000' }).setOrigin(0.5);
+
+        this.input.on('pointerdown', () => {
+            this.scene.start('GameScene');
+        });
+    }
+}
+
+class GameScene extends Phaser.Scene {
+
+	constructor() {
+		super({ key: 'GameScene' });
+        scene = this;
+	}
+
+    preload() {
+        //this.load.image('disk1', 'disk1.png');
+        //this.load.image('disk2', 'disk2.png');
+        //this.load.image('disk3', 'disk3.png');
+    }
+
+    create() {
+        //this.add.text(W * 0.5, H * 0.1, 'Tower of Hanoi', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
+        //this.add.text(W * 0.5, H * 0.15, 'Drag and drop the disks to the rightmost pole to solve the puzzle.', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
+    this.add.text(W * 0.7, H * 0.05, nickname, { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
+
     poles = pole_pos.map((x) => this.add.rectangle(x, Y / 1.45, 20, 500, 0x6666ff))
 
     this.add.rectangle(W * 0.5, Y, W * 0.8, 30, 0x964b00);
@@ -92,6 +125,21 @@ function create() {
     timer = this.time.addEvent({ delay: 100, callback: updateTimer, callbackScope: this, loop: true });
 }
 
+    update() {}
+
+}
+
+
+const config = PsyExpBaseConfig([Briefing, Briefing2, GameScene]);
+const game = new Phaser.Game(config);
+
+const W = game.config.width;
+const H = game.config.height;
+const Y = H * 0.8;
+const pole_pos = [W * 0.33, W * 0.5, W * 0.66];
+
+
+
 function updateDiskDragableStates(scene) {
     const topDisks = poles.map(pole => getTopDisk(poles.indexOf(pole)));
 
@@ -101,7 +149,6 @@ function updateDiskDragableStates(scene) {
     });
 }
 
-function update() {}
 
 function getTopDisk(poleIndex) {
     return disks.filter(disk => disk.x === poles[poleIndex].x).sort((a, b) => a.y - b.y)[0];
@@ -119,10 +166,15 @@ function checkWinCondition() {
 }
 
 function triggerWin(scene) {
-    scene.add.text(W * 0.5, H * 0.5, 'You Win!', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
+    scene.add.text(W * 0.5, H * 0.2, 'You Win!', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
     timer.paused = true;
     scene.input.enabled = false;
     updateDatabase();
+
+	setTimeout(getHighscores().then((scores) => {
+		displayHighscores(scores);
+	}), 2000);
+
 }
 
 function updateTimer() {
@@ -147,4 +199,20 @@ async function updateDatabase() {
 
     console.log(res);
 
+}
+
+export async function getHighscores() {
+  const {data, error} = await db.from('hanoi_highscores').select().neq("nickname", null).limit(15);
+  console.log(error);
+  console.log(data);
+  return data;
+}
+
+function displayHighscores(scores) {
+	const highscoreText = scene.add.text(W * 0.22, H * 0.23, messageMap["HIGHSCORES_TITLE"], normalFont);
+	let y = H * 0.28;
+	scores.map((score, i) => {
+		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, normalFont);
+		scene.add.text(W * 0.64, y + 40 * i, `${score.elapsed_time.toFixed(2)}s`, normalFont);
+	});
 }
