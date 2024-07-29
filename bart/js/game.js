@@ -1,7 +1,7 @@
 // Expects 'Phaser' to be a global variable;
 
-import { update_database, getHighscores, fetchMessages } from './database.js';
-import { nickname, PsyExpBaseConfig } from '../../psyexp_core.js';
+import { update_database, getHighscores } from './database.js';
+import { nickname, PsyExpBaseConfig, fetchMessages } from '../../psyexp_core.js';
 
 const required = [Phaser];
 //.map(type => (type === 'undefined')).some(Boolean);
@@ -23,7 +23,6 @@ function resize() {
 }
 
 const messageMap = await fetchMessages("pt-br");
-console.log(messageMap);
 
 //const root = document.body.getAttribute("data-root") || "";
 const root = window.location.href.replace(/\/$/, "");

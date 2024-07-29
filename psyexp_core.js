@@ -36,6 +36,17 @@ function makeid(length) {
     return result;
 }
 
+function processMessageData(query_result) {
+
+  const messageMap = {};
+
+  query_result.map((res) => {
+    messageMap[res.identifier] = res.message;
+  });
+
+  return messageMap;
+}
+
 function random_word() {
     return palavras[Math.floor(Math.random() * palavras.length)];
 }
@@ -43,6 +54,16 @@ function random_word() {
 function make_nickname() {
   return Array(2).fill().map((v) => random_word()).join(" ");
 }
+
+
+export async function fetchMessages(language) {
+  const {data, error} = await db.from('interface_messages')
+                                .select("*")
+                                .eq('language', language);
+  return processMessageData(data);
+}
+
+
 
 const palavras = [
     "amor", "amizade", "carinho", "alegria", "sorriso", "felicidade", "tristeza", "raiva", "medo", "esperança",
