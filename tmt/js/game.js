@@ -132,22 +132,6 @@ class TMTScene extends Phaser.Scene {
 		}
 	}
 
-	updateDrawing(pointer) {
-		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
-		this.graphics.clear();
-		this.graphics.lineStyle(4, 0xffffff, 1.0);
-		for (let line of this.lines) {
-			this.graphics.strokeLineShape(line);
-		}
-		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
-	}
-
-	updateDrawing(pointer) {
-		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
-		this.graphics.clear();
-		this.graphics.lineStyle(4, 0xffffff, 1.0);
-		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
-	}
 	endGame(success) {
 		this.isGameEnded = true;
 		if (success) {
