@@ -9,11 +9,11 @@ class TMTScene extends Phaser.Scene {
 		this.lines = [];
 		this.isDrawing = false;
 		this.isGameEnded = false;
-		this.isPaused = true; // Pausa o jogo inicialmente para mostrar a tela de introdução
-		this.minDistance = this.circleRadius * 3; // Distância mínima entre os círculos
-		this.lastCircle = null; // Último círculo correto clicado
-		this.wrongCircle = null; // Último círculo errado clicado
-		this.startTime = 0; // Tempo de início do jogo
+		this.isPaused = true;
+		this.minDistance = this.circleRadius * 3;
+		this.lastCircle = null;
+		this.wrongCircle = null;
+		this.startTime = 0;
 	}
 
 	preload() {
@@ -22,18 +22,12 @@ class TMTScene extends Phaser.Scene {
 
 	create() {
 		this.graphics = this.add.graphics({ lineStyle: { width: 4, color: 0xffffff } });
-
-		// Cronômetro fixo no canto superior direito
 		this.timeText = this.add.text(700, 16, 'Time: 0.00', { fontSize: '32px', fill: '#ffffff' });
-		this.timeText.setOrigin(1, 0); // Alinha o texto ao canto direito
-
-		// Adicionando fundo desfocado
+		this.timeText.setOrigin(1, 0);
 		this.blurBackground = this.add.graphics();
-		this.blurBackground.fillStyle(0x000000); // Meio transparente
+		this.blurBackground.fillStyle(0x000000);
 		this.blurBackground.fillRect(0, 0, 800, 600);
-		this.blurBackground.setDepth(1); // Coloca o desfoque atrás do texto da mensagem inicial
-
-		// Adicionando a tela de introdução
+		this.blurBackground.setDepth(1);
 		this.introText = this.add.text(
 			400,
 			200,
@@ -48,8 +42,7 @@ class TMTScene extends Phaser.Scene {
 			},
 		);
 		this.introText.setOrigin(0.5, 0.5);
-		this.introText.setDepth(2); // Coloca a mensagem na frente
-
+		this.introText.setDepth(2);
 		this.startButton = this.add
 			.text(400, 400, 'Start', {
 				fontSize: '32px',
@@ -59,20 +52,18 @@ class TMTScene extends Phaser.Scene {
 			})
 			.setInteractive();
 		this.startButton.setOrigin(0.5, 0.5);
-		this.startButton.setDepth(2); // Coloca o botão na frente
-
+		this.startButton.setDepth(2);
 		this.startButton.on(
 			'pointerdown',
 			() => {
 				this.introText.destroy();
 				this.startButton.destroy();
-				this.blurBackground.destroy(); // Remove o fundo desfocado
-				this.isPaused = false; // Retoma o jogo
-				this.startTime = this.time.now; // Armazena o tempo de início do jogo
+				this.blurBackground.destroy();
+				this.isPaused = false;
+				this.startTime = this.time.now;
 			},
 			this,
 		);
-
 		for (let i = 0; i < 25; i++) {
 			this.createUniqueCircle(i + 1);
 		}
@@ -109,41 +100,33 @@ class TMTScene extends Phaser.Scene {
 		circle.setInteractive();
 		circle.num = number;
 		circle.on('pointerdown', () => this.onCircleClick(circle), this);
-
-		// Store the circle and text together
 		circle.text = text;
 		this.circleData.push({ circle, text, x, y, num: number });
 	}
 
 	onCircleClick(circle) {
-		if (this.isPaused || this.isGameEnded) return; // Prevent interaction if game is paused or ended
-
+		if (this.isPaused || this.isGameEnded) return;
 		if (circle.num === this.currentCircle) {
 			if (this.lastCircle) {
-				// Adiciona a linha à lista de linhas e desenha ela
 				let line = new Phaser.Geom.Line(this.lastCircle.x, this.lastCircle.y, circle.x, circle.y);
 				this.lines.push(line);
 				this.graphics.strokeLineShape(line);
 			}
-			circle.setFillStyle(0x00ff00); // Cor verde para o círculo correto
-			circle.disableInteractive(); // Desabilita interação após clique correto
+			circle.setFillStyle(0x00ff00);
+			circle.disableInteractive();
 			this.lastCircle = circle;
 			this.currentCircle++;
-
-			// Limpa o círculo errado se houver algum marcado
 			if (this.wrongCircle) {
-				this.wrongCircle.setFillStyle(0xffffff); // Reset cor para o padrão
+				this.wrongCircle.setFillStyle(0xffffff);
 				this.wrongCircle = null;
 			}
 		} else {
 			if (this.wrongCircle) {
-				this.wrongCircle.setFillStyle(0xffffff); // Reset previous wrong circle color
+				this.wrongCircle.setFillStyle(0xffffff);
 			}
-
-			circle.setFillStyle(0xff0000); // Cor vermelha para círculo incorreto
+			circle.setFillStyle(0xff0000);
 			this.wrongCircle = circle;
 		}
-
 		if (this.currentCircle > this.circleData.length) {
 			this.endGame(true);
 		}
@@ -151,69 +134,27 @@ class TMTScene extends Phaser.Scene {
 
 	updateDrawing(pointer) {
 		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
-
-		// Primeiro, desenha todas as linhas armazenadas na lista de linhas
 		this.graphics.clear();
 		this.graphics.lineStyle(4, 0xffffff, 1.0);
 		for (let line of this.lines) {
 			this.graphics.strokeLineShape(line);
 		}
-
-		// Em seguida, desenha a linha temporária do último círculo correto para o ponteiro
 		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
 	}
 
 	updateDrawing(pointer) {
 		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
-
-		// Primeiro, desenha todas as linhas armazenadas na lista de linhas
-		this.graphics.clear();
-		this.graphics.lineStyle(4, 0xffffff, 1.0);
-		for (let line of this.lines) {
-			this.graphics.strokeLineShape(line);
-		}
-
-		// Em seguida, desenha a linha temporária do último círculo correto para o ponteiro
-		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
-	}
-
-	startDrawing(pointer) {
-		if (this.isPaused || this.isGameEnded) return; // Prevent further drawing if game is paused or ended
-
-		this.isDrawing = true;
-		this.lastPointer = { x: pointer.x, y: pointer.y };
-	}
-
-	stopDrawing(pointer) {
-		if (this.isPaused || this.isGameEnded) return; // Prevent further drawing if game is paused or ended
-
-		if (this.isDrawing) {
-			this.isDrawing = false;
-			this.updateDrawing(pointer);
-		}
-	}
-
-	updateDrawing(pointer) {
-		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
-
 		this.graphics.clear();
 		this.graphics.lineStyle(4, 0xffffff, 1.0);
 		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
 	}
-	//refact
 	endGame(success) {
-		this.isGameEnded = true; // Flag to indicate game has ended
-		this.input.off('pointerdown', this.startDrawing, this); // Remove pointer event listeners
-		this.input.off('pointerup', this.stopDrawing, this);
-		this.input.off('pointermove', this.updateDrawing, this);
-
+		this.isGameEnded = true;
 		if (success) {
 			this.add.text(250, 450, 'Test Completed!', { fontSize: '32px', fill: '#ffffff' });
 		} else {
 			this.add.text(250, 450, 'Test Failed!', { fontSize: '32px', fill: '#ff0000' });
 		}
-
-		// Disable interactivity for all circles
 		this.circleData.forEach(({ circle }) => {
 			circle.disableInteractive();
 		});
