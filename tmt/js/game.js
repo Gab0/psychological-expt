@@ -122,29 +122,63 @@ class TMTScene extends Phaser.Scene {
 	onCircleClick(circle) {
 		if (this.isPaused || this.isGameEnded) return; // Prevent interaction if game is paused or ended
 
-		if (this.wrongCircle) {
-			this.wrongCircle.setFillStyle(0xffffff); // Reset previous wrong circle color
-			this.wrongCircle = null;
-		}
-
 		if (circle.num === this.currentCircle) {
 			if (this.lastCircle) {
-				this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, circle.x, circle.y);
+				// Adiciona a linha à lista de linhas e desenha ela
+				let line = new Phaser.Geom.Line(this.lastCircle.x, this.lastCircle.y, circle.x, circle.y);
+				this.lines.push(line);
+				this.graphics.strokeLineShape(line);
 			}
-			circle.setFillStyle(0x00ff00); // Green color for correct circle
-			circle.disableInteractive(); // Disable interaction after correct click
+			circle.setFillStyle(0x00ff00); // Cor verde para o círculo correto
+			circle.disableInteractive(); // Desabilita interação após clique correto
 			this.lastCircle = circle;
 			this.currentCircle++;
+
+			// Limpa o círculo errado se houver algum marcado
+			if (this.wrongCircle) {
+				this.wrongCircle.setFillStyle(0xffffff); // Reset cor para o padrão
+				this.wrongCircle = null;
+			}
 		} else {
-			// Se o jogador clicar em um círculo errado, limpe todas as linhas desenhadas
-			this.graphics.clear();
-			circle.setFillStyle(0xff0000); // Red color for incorrect circle
+			if (this.wrongCircle) {
+				this.wrongCircle.setFillStyle(0xffffff); // Reset previous wrong circle color
+			}
+
+			circle.setFillStyle(0xff0000); // Cor vermelha para círculo incorreto
 			this.wrongCircle = circle;
 		}
 
 		if (this.currentCircle > this.circleData.length) {
 			this.endGame(true);
 		}
+	}
+
+	updateDrawing(pointer) {
+		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
+
+		// Primeiro, desenha todas as linhas armazenadas na lista de linhas
+		this.graphics.clear();
+		this.graphics.lineStyle(4, 0xffffff, 1.0);
+		for (let line of this.lines) {
+			this.graphics.strokeLineShape(line);
+		}
+
+		// Em seguida, desenha a linha temporária do último círculo correto para o ponteiro
+		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
+	}
+
+	updateDrawing(pointer) {
+		if (this.isPaused || this.isGameEnded || !this.isDrawing || !this.lastCircle) return;
+
+		// Primeiro, desenha todas as linhas armazenadas na lista de linhas
+		this.graphics.clear();
+		this.graphics.lineStyle(4, 0xffffff, 1.0);
+		for (let line of this.lines) {
+			this.graphics.strokeLineShape(line);
+		}
+
+		// Em seguida, desenha a linha temporária do último círculo correto para o ponteiro
+		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
 	}
 
 	startDrawing(pointer) {
