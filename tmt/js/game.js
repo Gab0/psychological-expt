@@ -224,7 +224,7 @@ class TMTScene extends Phaser.Scene {
 		});
 	}
 }
-
+//teste
 const config = {
 	type: Phaser.AUTO,
 	width: 800,
