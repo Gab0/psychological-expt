@@ -76,10 +76,6 @@ class TMTScene extends Phaser.Scene {
 		for (let i = 0; i < 25; i++) {
 			this.createUniqueCircle(i + 1);
 		}
-
-		this.input.on('pointerdown', this.startDrawing, this);
-		this.input.on('pointerup', this.stopDrawing, this);
-		this.input.on('pointermove', this.updateDrawing, this);
 	}
 
 	update(time) {
@@ -207,7 +203,6 @@ class TMTScene extends Phaser.Scene {
 	//refact
 	endGame(success) {
 		this.isGameEnded = true; // Flag to indicate game has ended
-		this.graphics.clear(); // Clear drawing graphics
 		this.input.off('pointerdown', this.startDrawing, this); // Remove pointer event listeners
 		this.input.off('pointerup', this.stopDrawing, this);
 		this.input.off('pointermove', this.updateDrawing, this);
