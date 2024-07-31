@@ -204,7 +204,7 @@ class TMTScene extends Phaser.Scene {
 		this.graphics.lineStyle(4, 0xffffff, 1.0);
 		this.graphics.lineBetween(this.lastCircle.x, this.lastCircle.y, pointer.x, pointer.y);
 	}
-
+	//refact
 	endGame(success) {
 		this.isGameEnded = true; // Flag to indicate game has ended
 		this.graphics.clear(); // Clear drawing graphics
