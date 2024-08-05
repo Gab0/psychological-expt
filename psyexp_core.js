@@ -19,6 +19,12 @@ export const PsyExpBaseConfig = (scenes) => {
     }
 };
 
+export const font = {
+    normal: { fontSize: '40px', fill: '#000', backgroundColor: '#f0f0f0' },
+    larger: { fontSize: '44px', fill: '#101010', backgroundColor: '#f0f0f0' },
+    largest: { fontSize: '52px', fill: '#000', fontWeight: 'bold' }
+}
+
 const db_url = "https://obxyvfzojhcpfeeoxrez.supabase.co"
 const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ieHl2ZnpvamhjcGZlZW94cmV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAxMTE1MTIsImV4cCI6MjAzNTY4NzUxMn0.a6-Ff7bzShSloowgJMxVCyB8DACAVOy5_P2a3hhRBBY";
 

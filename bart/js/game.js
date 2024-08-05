@@ -1,7 +1,7 @@
 // Expects 'Phaser' to be a global variable;
 
 import { update_database, getHighscores } from './database.js';
-import { nickname, PsyExpBaseConfig, fetchMessages } from '../../psyexp_core.js';
+import { font, nickname, PsyExpBaseConfig, fetchMessages } from '../../psyexp_core.js';
 
 const required = [Phaser];
 //.map(type => (type === 'undefined')).some(Boolean);
@@ -93,7 +93,7 @@ class GameScene extends Phaser.Scene {
 		scene = this;
 
 		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(0.5);
-		this.add.text(20, 20, messageMap["TITLE"], largestFont);
+		this.add.text(20, 20, messageMap["TITLE"], font.largest);
 
 		balloon = this.add
 			.image(W * 0.5, H * 0.9, 'balloon')
@@ -110,19 +110,19 @@ class GameScene extends Phaser.Scene {
 
 		thumpSound = this.sound.add('thump');
 		cashRewardSound = this.sound.add('cash-reward');
-		currentScoreText = this.add.text(20, 60, '', normalFont);
+		currentScoreText = this.add.text(20, 60, '', font.normal);
 		setCurrentScore(currentScore);
 
-		const nick = this.add.text(W * 0.7, H * 0.05, `${nickname}`, normalFont);
+		const nick = this.add.text(W * 0.7, H * 0.05, `${nickname}`, font.normal);
 
-		lastBalloonScoreText = this.add.text(W * 0.01, H * 0.1, '', normalFont);
+		lastBalloonScoreText = this.add.text(W * 0.01, H * 0.1, '', font.normal);
 		setLastBalloonScore(0);
 
 		const message_keyboard = 'Press SPACE to pump the balloon, and ENTER to collect its current value';
 		const message_touch = 'Tap the balloon to pump it, and tap the piggy bank to collect its current value';
-		helperText = this.add.text(W * 0.01, H * 0.91, messageMap["HELP_POINTER"], normalFont);
+		helperText = this.add.text(W * 0.01, H * 0.91, messageMap["HELP_POINTER"], font.normal);
 
-		balloonCounterText = this.add.text(20, H * 0.2, '', largerFont);
+		balloonCounterText = this.add.text(20, H * 0.2, '', font.larger);
 
 		this.input.keyboard.on('keydown-SPACE', enablePumping, this);
 		this.input.keyboard.on('keyup-SPACE', disablePumping, this);
@@ -161,10 +161,6 @@ const config = PsyExpBaseConfig([InstructionsScene, GameScene]);
 // Game properties;
 const balloonColors = ['0x3366ff', '0xffff00', '0xffa077'];
 const balloonDurabilities = [128, 32, 8];
-
-const normalFont = { fontSize: '40px', fill: '#000', backgroundColor: '#f0f0f0' };
-const largerFont = { fontSize: '44px', fill: '#101010', backgroundColor: '#f0f0f0' };
-const largestFont = { fontSize: '52px', fill: '#000', fontWeight: 'bold' };
 
 const gameConstants = {
 	balloonInitialSize: 1.0,
@@ -374,11 +370,11 @@ function setGameOver() {
 }
 
 function displayHighscores(scores) {
-	const highscoreText = scene.add.text(W * 0.22, H * 0.23, messageMap["HIGHSCORES_TITLE"], normalFont);
+	const highscoreText = scene.add.text(W * 0.22, H * 0.23, messageMap["HIGHSCORES_TITLE"], font.normal);
 	let y = H * 0.28;
 	scores.map((score, i) => {
-		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, normalFont);
-		scene.add.text(W * 0.64, y + 40 * i, `R$${score.score.toFixed(2)}`, normalFont);
+		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
+		scene.add.text(W * 0.64, y + 40 * i, `R$${score.score.toFixed(2)}`, font.normal);
 	});
 }
 
