@@ -63,9 +63,12 @@ export async function fetchMessages(language) {
 export const run_id = makeid(10);
 
 export let nickname = null;
-const result = await db.rpc("gen_nickname").then((res) => {
-  console.log(res);
-  nickname = res.data;
-})
 
-console.log(result);
+const reloadNickname = async () => {
+  const result = await db.rpc("gen_nickname").then((res) => {
+    console.log(res);
+    nickname = res.data;
+  })
+};
+
+reloadNickname();
