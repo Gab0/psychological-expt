@@ -1,21 +1,21 @@
 
 export const PsyExpBaseConfig = (scenes) => {
     return {
-	type: Phaser.WEBGL,
-	antialias: true,
-	width: 1920,
-	height: 1000,
-	backgroundColor: '#000000',
-	scene: scenes,
-	fps: {
-		min: 60,
-		target: 60,
-	},
-	scale: {
-		mode: Phaser.Scale.FIT,
-		autoCenter: Phaser.Scale.CENTER,
-		orientation: 'landscape',
-	},
+      type: Phaser.WEBGL,
+      antialias: true,
+      width: 1920,
+      height: 1000,
+      backgroundColor: '#000000',
+      scene: scenes,
+      fps: {
+        min: 60,
+        target: 60,
+      },
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER,
+        orientation: 'landscape',
+      },
     }
 };
 
