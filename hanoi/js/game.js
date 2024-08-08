@@ -11,8 +11,9 @@ let timer;
 let lastTime;
 let timerText;
 let startTime;
-let diskCount = 5;  // Default number of disks
 
+const urlParams = new URLSearchParams(window.location.search);
+const diskCount = parseInt(urlParams.get('ndisk'), 10) || 5;
 
 let currentDraggedDisk = null;
 
@@ -237,7 +238,7 @@ async function updateDatabase() {
 }
 
 export async function getHighscores() {
-  const {data, error} = await db.from('hanoi_highscores').select().neq("nickname", null).limit(15);
+    const {data, error} = await db.from('hanoi_highscores').select().neq("nickname", null).eq("nb_disk", diskCount).limit(15);
   console.log(error);
   console.log(data);
   return data;
@@ -248,7 +249,7 @@ function displayHighscores(scores) {
     let y = H * 0.28;
     scores.map((score, i) => {
         scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
-        scene.add.text(W * 0.59, y + 40 * i, `${score.nb_disk}`, font.normal);
+        scene.add.text(W * 0.59, y + 40 * i, `${score.nb_move}`, font.normal);
         scene.add.text(W * 0.64, y + 40 * i, `${score.elapsed_time.toFixed(2)}s`, font.normal);
     });
 }
