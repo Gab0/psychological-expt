@@ -2,7 +2,7 @@
 create TABLE hanoi_runs
 (
     id character varying NOT NULL,
-	useragent character varying NULL,
+    useragent character varying NULL,
     nickname character varying NULL,
     user_nickname text NULL,
     nb_disk integer NOT NULL,

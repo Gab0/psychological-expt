@@ -30,6 +30,4 @@ export async function update_database(score, balloons, explosions, balloonSchedu
   console.log(res);
 }
 
-
-
 let timestamps = [];
