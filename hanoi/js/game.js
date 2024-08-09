@@ -152,7 +152,9 @@ class GameScene extends Phaser.Scene {
                 currentDraggedDisk.x = currentDraggedDisk.getData('startX');
                 currentDraggedDisk.y = currentDraggedDisk.getData('startY');
             } else {
-                moveCount++;
+                if (currentDraggedDisk.x !== currentDraggedDisk.getData('startX')) {
+                    moveCount++;
+                }
                 timestamps.push(new Date());
                 moveText.setText('Moves: ' + moveCount);
                 if (checkWinCondition()) {
