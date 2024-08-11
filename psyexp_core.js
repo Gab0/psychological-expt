@@ -62,13 +62,41 @@ export async function fetchMessages(language) {
 
 export const run_id = makeid(10);
 
-export let nickname = null;
 
-const reloadNickname = async () => {
+export function setCookie(name, value, days) {
+    // Create a date for the expiration
+    var date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + date.toUTCString();
+
+    // Set the cookie
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+export function getCookie(name) {
+    var nameEQ = name + "=";
+    var cookiesArray = document.cookie.split(';');
+
+    for(var i = 0; i < cookiesArray.length; i++) {
+        var cookie = cookiesArray[i].trim();
+
+        if (cookie.indexOf(nameEQ) == 0) {
+            return cookie.substring(nameEQ.length, cookie.length);
+        }
+    }
+
+    return null; // Return null if the cookie is not found
+}
+
+export let nickname = getCookie("username");
+
+export const reloadNickname = async () => {
   const result = await db.rpc("gen_nickname").then((res) => {
     console.log(res);
     nickname = res.data;
   })
 };
 
-reloadNickname();
+if (nickname === null) {
+    reloadNickname();
+}
