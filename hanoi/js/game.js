@@ -249,10 +249,11 @@ export async function getHighscores(scene) {
 }
 
 function displayHighscores(scores) {
-    const highscoreText = scene.add.text(W * 0.22, H * 0.23, messageMap["HIGHSCORES_TITLE"], font.larger);
+    const highscoreText = scene.add.text(W * 0.18, H * 0.23, messageMap["HIGHSCORES_TITLE"], font.larger);
     let y = H * 0.28;
     scores.map((score, i) => {
-        scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
+        scene.add.text(W * 0.25, y + 40 * i, `${i + 1}.`, font.normal);
+        scene.add.text(W * 0.33, y + 40 * i, `${score.nickname}`, font.normal);
         scene.add.text(W * 0.59, y + 40 * i, `${score.nb_move}`, font.normal);
         scene.add.text(W * 0.64, y + 40 * i, `${score.elapsed_time.toFixed(2)}s`, font.normal);
     });
