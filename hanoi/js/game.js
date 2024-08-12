@@ -1,21 +1,10 @@
 
-import { PsyExpBaseConfig, db, run_id, nickname, fetchMessages, font } from '../../psyexp_core.js';
-
-
-let poles = [];
-let disks = [];
-let timestamps = [];
-let moveCount = 0;
-let moveText;
-let timer;
-let lastTime;
-let timerText;
-let startTime;
+import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font } from '../../psyexp_core.js';
 
 const urlParams = new URLSearchParams(window.location.search);
-const diskCount = parseInt(urlParams.get('ndisk'), 10) || 5;
 
-let currentDraggedDisk = null;
+let moveText;
+let timerText;
 
 let scene = null;
 const messageMap = await fetchMessages("pt-br");
@@ -66,6 +55,19 @@ class GameScene extends Phaser.Scene {
 
     create() {
 
+        this.gameState = {
+            runId: makeid(10),
+            diskCount: parseInt(urlParams.get('ndisk'), 10) || 5,
+            poles: [],
+            disks: [],
+            timestamps: [],
+            moveCount: 0,
+            timer: null,
+            lastTime: 0,
+            startTime: 0,
+            currentDraggedDisk: null
+        };
+
         const background = this.add.rectangle(0, 0, W, H, 0x010101);
         background.setOrigin(0, 0);
         background.setInteractive();
@@ -73,21 +75,21 @@ class GameScene extends Phaser.Scene {
 
 
         //this.add.text(W * 0.5, H * 0.1, 'Tower of Hanoi', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
-        //this.add.text(W * 0.5, H * 0.15, 'Drag and drop the disks to the rightmost pole to solve the puzzle.', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
+        //this.add.text(W * 0.5, H * 0.15, 'Drag and drop the this.gameState.disks to the rightmost pole to solve the puzzle.', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
         this.add.text(W * 0.7, H * 0.05, nickname, { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
 
-        poles = pole_pos.map((x) => this.add.rectangle(x, pole_base, 20, pole_height, 0x6666ff))
+        this.gameState.poles = pole_pos.map((x) => this.add.rectangle(x, pole_base, 20, pole_height, 0x6666ff))
 
         this.add.rectangle(W * 0.5, Y, W * 0.8, 30, 0x964b00);
 
 
         const diskColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff, 0xffffff];
 
-        for (let i = 0; i < diskCount; i++) {
+        for (let i = 0; i < this.gameState.diskCount; i++) {
             const x = pole_pos[0];
             const z = i + 1;
             const disk = this.add.rectangle(x, Y - z * 30, 300 - i * 30, 30, diskColors[i % diskColors.length]);
-            disks.push(disk);
+            this.gameState.disks.push(disk);
         }
 
         const getTopDiskToDrag = (x, y) => {
@@ -95,10 +97,10 @@ class GameScene extends Phaser.Scene {
             //      return null;
             // }
 
-            for (const pole of poles) {
+            for (const pole of this.gameState.poles) {
                 const distance = Math.abs(x - pole.x);
                 if (distance <= pole_tolerance) {
-                    return getTopDisk(poles.indexOf(pole));
+                    return getTopDisk(this.gameState.poles.indexOf(pole));
                 }
             }
 
@@ -117,58 +119,58 @@ class GameScene extends Phaser.Scene {
             topDisk.setData('startX', topDisk.x);
             topDisk.setData('startY', topDisk.y);
 
-            currentDraggedDisk = topDisk;
+            this.gameState.currentDraggedDisk = topDisk;
 
-        });
+        }.bind(this));
 
         this.input.on('drag', function (pointer, gameObject) {
-            if (!currentDraggedDisk) {
+            if (!this.gameState.currentDraggedDisk) {
                 return;
             }
 
-            currentDraggedDisk.x = pointer.x;
-            currentDraggedDisk.y = pointer.y;
-        });
+            this.gameState.currentDraggedDisk.x = pointer.x;
+            this.gameState.currentDraggedDisk.y = pointer.y;
+        }.bind(this));
 
         this.input.on('dragend', function (pointer, gameObject) {
-            if (!currentDraggedDisk) {
+            if (!this.gameState.currentDraggedDisk) {
                 return;
             }
 
             let placed = false;
-            for (const pole of poles) {
-                if (Math.abs(currentDraggedDisk.x - pole.x) <= pole_tolerance) {
-                    const poleIndex = poles.indexOf(pole);
+            for (const pole of this.gameState.poles) {
+                if (Math.abs(this.gameState.currentDraggedDisk.x - pole.x) <= pole_tolerance) {
+                    const poleIndex = this.gameState.poles.indexOf(pole);
                     const topDisk = getTopDisk(poleIndex);
-                    if (!topDisk || currentDraggedDisk.width < topDisk.width) {
-                        currentDraggedDisk.x = pole.x;
-                        currentDraggedDisk.y = Y - getDisksOnPole(poleIndex) * 30;
+                    if (!topDisk || this.gameState.currentDraggedDisk.width < topDisk.width) {
+                        this.gameState.currentDraggedDisk.x = pole.x;
+                        this.gameState.currentDraggedDisk.y = Y - getDisksOnPole(poleIndex) * 30;
                         placed = true;
                         break;
                     }
                 }
             }
             if (!placed) {
-                currentDraggedDisk.x = currentDraggedDisk.getData('startX');
-                currentDraggedDisk.y = currentDraggedDisk.getData('startY');
+                this.gameState.currentDraggedDisk.x = this.gameState.currentDraggedDisk.getData('startX');
+                this.gameState.currentDraggedDisk.y = this.gameState.currentDraggedDisk.getData('startY');
             } else {
-                if (currentDraggedDisk.x !== currentDraggedDisk.getData('startX')) {
-                    moveCount++;
+                if (this.gameState.currentDraggedDisk.x !== this.gameState.currentDraggedDisk.getData('startX')) {
+                    this.gameState.moveCount++;
                 }
-                timestamps.push(new Date());
-                moveText.setText('Moves: ' + moveCount);
+                this.gameState.timestamps.push(new Date());
+                moveText.setText('Moves: ' + this.gameState.moveCount);
                 if (checkWinCondition()) {
-                    triggerWin(currentDraggedDisk.scene);
+                    triggerWin(this.gameState.currentDraggedDisk.scene);
                 };
             }
-            currentDraggedDisk = null;
-        });
+            this.gameState.currentDraggedDisk = null;
+        }.bind(this));
 
         moveText = this.add.text(W * 0.1, 16, 'Moves: 0', { fontSize: '32px', fill: '#fff' });
         timerText = this.add.text(W * 0.1, 50, 'Time: 0', { fontSize: '32px', fill: '#fff' });
 
-        startTime = new Date();
-        timer = this.time.addEvent({ delay: 100, callback: updateTimer, callbackScope: this, loop: true });
+        this.gameState.startTime = new Date();
+        this.gameState.timer = this.time.addEvent({ delay: 100, callback: updateTimer.bind(this), callbackScope: this, loop: true });
 }
 
     update() {}
@@ -188,62 +190,61 @@ const pole_base = Y / 1.45;
 const pole_height = 500;
 
 function getTopDisk(poleIndex) {
-    return disks.filter(disk => disk.x === poles[poleIndex].x).sort((a, b) => a.y - b.y)[0];
+    return scene.gameState.disks.filter(disk => disk.x === scene.gameState.poles[poleIndex].x).sort((a, b) => a.y - b.y)[0];
 }
 
 function getDisksOnPole(poleIndex) {
-    return disks.filter(disk => disk.x === poles[poleIndex].x).length;
+    return scene.gameState.disks.filter(disk => disk.x === scene.gameState.poles[poleIndex].x).length;
 }
 
 function checkWinCondition() {
-    const thirdPoleDisks = disks.filter(disk => disk.x === poles[2].x).sort((a, b) => a.y - b.y);
-    if (thirdPoleDisks.length === diskCount) {
+    const thirdPoleDisks = scene.gameState.disks.filter(disk => disk.x === scene.gameState.poles[2].x).sort((a, b) => a.y - b.y);
+    if (thirdPoleDisks.length === scene.gameState.diskCount) {
         return true;
     }
 }
 
 function triggerWin(scene) {
     scene.add.text(W * 0.5, H * 0.2, 'You Win!', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
-    timer.paused = true;
-    scene.input.enabled = false;
-    updateDatabase();
+    scene.gameState.timer.paused = true;
+    updateDatabase(scene.gameState);
 
-	setTimeout(getHighscores().then((scores) => {
-		displayHighscores(scores);
-	}), 2000);
+    getHighscores(scene).then((scores) => {
+        displayHighscores(scores);
+    });
 
 }
 
 function updateTimer() {
-    lastTime = getElapsedTime();
-    timerText.setText('Time: ' + lastTime + 's');
+    this.gameState.lastTime = getElapsedTime();
+    timerText.setText('Time: ' + this.gameState.lastTime + 's');
 }
 
 function getElapsedTime() {
-    return ((new Date() - startTime) / 1000).toFixed(2);
+    return ((new Date() - scene.gameState.startTime) / 1000).toFixed(2);
 }
 
-async function updateDatabase() {
+async function updateDatabase(gameState) {
 
     const res = await db.from('hanoi_runs').insert({
-        id: run_id,
+        id: gameState.runId,
         useragent: window.navigator.userAgent,
         nickname: nickname,
-        nb_disk: diskCount,
-        nb_move: moveCount,
-        elapsed_time: lastTime,
-        timestamps: timestamps
+        nb_disk: gameState.diskCount,
+        nb_move: gameState.moveCount,
+        elapsed_time: gameState.lastTime,
+        timestamps: gameState.timestamps
     });
 
     console.log(res);
 
 }
 
-export async function getHighscores() {
-    const {data, error} = await db.from('hanoi_highscores').select().neq("nickname", null).eq("nb_disk", diskCount).limit(15);
-  console.log(error);
-  console.log(data);
-  return data;
+export async function getHighscores(scene) {
+    const {data, error} = await db.from('hanoi_highscores').select().neq("nickname", null).eq("nb_disk", scene.gameState.diskCount).limit(15);
+    console.log(error);
+    console.log(data);
+    return data;
 }
 
 function displayHighscores(scores) {
