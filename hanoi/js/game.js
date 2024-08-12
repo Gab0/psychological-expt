@@ -73,6 +73,7 @@ class GameScene extends Phaser.Scene {
         background.setInteractive();
         this.input.setDraggable(background, true);
 
+        displayRebootButton();
 
         //this.add.text(W * 0.5, H * 0.1, 'Tower of Hanoi', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
         //this.add.text(W * 0.5, H * 0.15, 'Drag and drop the this.gameState.disks to the rightmost pole to solve the puzzle.', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
@@ -254,5 +255,14 @@ function displayHighscores(scores) {
         scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
         scene.add.text(W * 0.59, y + 40 * i, `${score.nb_move}`, font.normal);
         scene.add.text(W * 0.64, y + 40 * i, `${score.elapsed_time.toFixed(2)}s`, font.normal);
+    });
+}
+
+function displayRebootButton() {
+    const rebootButton = scene.add.rectangle(W * 0.9, H * 0.1, W * 0.05, H * 0.05, 0x40ff40).setOrigin(0, 0).setInteractive();
+    rebootButton.depth = 100;
+    rebootButton.on('pointerdown', () => {
+        console.log("reboot");
+        scene.scene.start('GameScene');
     });
 }
