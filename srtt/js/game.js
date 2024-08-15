@@ -1,20 +1,30 @@
+
+import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font } from '../../psyexp_core.js';
+
 class SRTTScene extends Phaser.Scene {
     constructor() {
         super({ key: 'SRTTScene' });
-        this.sequence = [0, 1, 2, 3]; // Example sequence
+        const stimulus = [0, 1, 2, 3]; // Example sequence
+
+        this.sequence = Array.from(Array(20)).map(() => stimulus[Math.floor(Math.random() * stimulus.length)]);
+        console.log(this.sequence);
         this.currentStep = 0;
+
+        const sX = [W * 0.2, W * 0.8];
+        const sY = [H * 0.2, H * 0.8];
+
         this.stimulusPositions = [
-            { x: 100, y: 100 }, // Top-left
-            { x: 700, y: 100 }, // Top-right
-            { x: 100, y: 500 }, // Bottom-left
-            { x: 700, y: 500 }  // Bottom-right
+            { x: sX[0], y: sY[0] }, // Top-left
+            { x: sX[1], y: sY[0] }, // Top-right
+            { x: sX[0], y: sY[1] }, // Bottom-left
+            { x: sX[1], y: sY[1] }  // Bottom-right
         ];
         this.stimulusSize = 50;
         this.reactionTimes = [];
+        this.inputModes = [];
     }
 
     preload() {
-        this.load.image('marker', 'https://via.placeholder.com/50'); // Placeholder image for marker
     }
 
     create() {
@@ -25,18 +35,23 @@ class SRTTScene extends Phaser.Scene {
 
     createMarkers() {
         for (let pos of this.stimulusPositions) {
-            this.add.image(pos.x, pos.y, 'marker');
+            this.add.rectangle(pos.x, pos.y, this.stimulusSize, this.stimulusSize, 0xffffff);
         }
     }
 
     nextStimulus() {
         if (this.currentStep < this.sequence.length) {
             this.currentStimulusIndex = this.sequence[this.currentStep];
-            this.currentStimulus = this.add.image(
+            this.currentStimulus = this.add.rectangle(
                 this.stimulusPositions[this.currentStimulusIndex].x,
                 this.stimulusPositions[this.currentStimulusIndex].y,
-                'marker'
-            ).setTint(0xff0000); // Highlight the current stimulus
+                this.stimulusSize,
+                this.stimulusSize,
+                0xff0000
+            )
+
+            this.currentStimulus.setInteractive();
+            this.currentStimulus.on('pointerdown', () => this.computeStimulus("mouse"));
             this.stimulusStartTime = new Date().getTime();
         } else {
             this.endExperiment();
@@ -47,40 +62,36 @@ class SRTTScene extends Phaser.Scene {
         if (!this.currentStimulus) return;
 
         let keyMap = {
-            'ArrowLeft': 0,
-            'ArrowRight': 1,
-            'ArrowDown': 2,
-            'ArrowUp': 3
+            'i': 0,
+            'o': 1,
+            'k': 2,
+            'l': 3
         };
 
+        console.log(event.key);
+
         if (event.key in keyMap && keyMap[event.key] === this.currentStimulusIndex) {
-            const reactionTime = new Date().getTime() - this.stimulusStartTime;
-            this.reactionTimes.push(reactionTime);
-            this.currentStimulus.destroy();
-            this.currentStimulus = null;
-            this.currentStep++;
-            this.nextStimulus();
+            this.computeStimulus("keyboard");
         }
     }
 
+    computeStimulus(mode) {
+        const reactionTime = new Date().getTime() - this.stimulusStartTime;
+        this.reactionTimes.push(reactionTime);
+        this.inputModes.push(mode);
+        this.currentStimulus.destroy();
+        this.currentStimulus = null;
+        this.currentStep++;
+        this.nextStimulus();
+    }
     endExperiment() {
         console.log('Experiment completed. Reaction times:', this.reactionTimes);
-        this.add.text(400, 300, 'Experiment Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5);
+        this.add.text(W * 0.5, H * 0.5, 'Experiment Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5);
     }
 }
 
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    scene: SRTTScene,
-    physics: {
-        default: 'arcade',
-        arcade: {
-            debug: false
-        }
-    }
-};
+const config = PsyExpBaseConfig(SRTTScene);
 
 const game = new Phaser.Game(config);
-
+const W = game.config.width;
+const H = game.config.height;
