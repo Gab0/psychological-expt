@@ -1,8 +1,11 @@
+
+import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font, StandardBriefingScene } from '../../psyexp_core.js';
+
 document.title = 'Trail Making Test (TMT)';
 
 class TMTScene extends Phaser.Scene {
-	constructor() {
-		super({ key: 'TMTScene' });
+	constructor(markers, sceneName) {
+		super({ key: sceneName });
 		this.circleData = [];
 		this.circleRadius = 30;
 		this.currentCircle = 1;
@@ -24,49 +27,12 @@ class TMTScene extends Phaser.Scene {
 		this.graphics = this.add.graphics({ lineStyle: { width: 4, color: 0xffffff } });
 		this.timeText = this.add.text(700, 16, 'Time: 0.00', { fontSize: '32px', fill: '#ffffff' });
 		this.timeText.setOrigin(1, 0);
-		this.blurBackground = this.add.graphics();
-		this.blurBackground.fillStyle(0x000000);
-		this.blurBackground.fillRect(0, 0, 800, 600);
-		this.blurBackground.setDepth(1);
-		this.introText = this.add.text(
-			400,
-			200,
-			'You will be shown numbers contained in circles.\n Please click the circles of the numbers in ascending order,\n starting from the lowest number and moving to the next one in order.\n Start at 1, then 2, then 3, and so on.\n Work as quickly and accurately as you can.',
-			{
-				fontSize: '18px',
 
-				align: 'center',
-				fill: '#ffffff',
-				align: 'left',
-				backgroundColor: '#000000',
-			},
-		);
-		this.introText.setOrigin(0.5, 0.5);
-		this.introText.setDepth(2);
-		this.startButton = this.add
-			.text(400, 400, 'Start', {
-				fontSize: '32px',
-				fill: '#ffffff',
-				backgroundColor: '#0000ff',
-				padding: { left: 20, right: 20, top: 10, bottom: 10 },
-			})
-			.setInteractive();
-		this.startButton.setOrigin(0.5, 0.5);
-		this.startButton.setDepth(2);
-		this.startButton.on(
-			'pointerdown',
-			() => {
-				this.introText.destroy();
-				this.startButton.destroy();
-				this.blurBackground.destroy();
-				this.isPaused = false;
-				this.startTime = this.time.now;
-			},
-			this,
-		);
 		for (let i = 0; i < 25; i++) {
 			this.createUniqueCircle(i + 1);
 		}
+				this.isPaused = false;
+				this.startTime = this.time.now;
 	}
 
 	update(time) {
@@ -80,8 +46,9 @@ class TMTScene extends Phaser.Scene {
 		let x, y, overlap;
 		do {
 			overlap = false;
-			x = Phaser.Math.Between(50, 750);
-			y = Phaser.Math.Between(50, 550);
+			x = Phaser.Math.Between(W * 0.1, W * 0.9);
+			y = Phaser.Math.Between(H * 0.1, H * 0.9);
+
 			for (let circle of this.circleData) {
 				if (Phaser.Math.Distance.Between(circle.x, circle.y, x, y) < this.minDistance) {
 					overlap = true;
@@ -133,29 +100,41 @@ class TMTScene extends Phaser.Scene {
 	}
 
 	endGame(success) {
-		this.isGameEnded = true;
 		if (success) {
-			this.add.text(250, 450, 'Test Completed!', { fontSize: '32px', fill: '#ffffff' });
+			this.add.text(M, 450, 'Test Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5, 0.5);
+            if (this.scene.key === "SceneA") {
+				this.scene.start("SceneB");
+			}
+            this.scene.stop();
 		} else {
-			this.add.text(250, 450, 'Test Failed!', { fontSize: '32px', fill: '#ff0000' });
+			this.add.text(M, 450, 'Test Failed!', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5, 0.5);
 		}
 		this.circleData.forEach(({ circle }) => {
 			circle.disableInteractive();
 		});
 	}
 }
-//teste
-const config = {
-	type: Phaser.AUTO,
-	width: 800,
-	height: 800,
-	scene: TMTScene,
-	physics: {
-		default: 'arcade',
-		arcade: {
-			debug: false,
-		},
-	},
-};
+
+const messageMap = await fetchMessages("pt-br", "tmt");
+const briefing = new StandardBriefingScene(
+    'Trail Making Test',
+    [messageMap["BRIEFING_1"], messageMap["BRIEFING_2"]],
+    'BriefingScene',
+    'SceneA',
+);
+
+
+const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
+const letters = Array.from({ length: 25 }, (_, i) => String.fromCharCode(65 + i));
+
+const roundA = new TMTScene(numbers, "SceneA");
+const roundB = new TMTScene(letters, "SceneB");
+
+const config = PsyExpBaseConfig([briefing, roundA, roundB]);
 
 const game = new Phaser.Game(config);
+
+const W = game.config.width;
+const H = game.config.height;
+const M = W * 0.5;
+const Y = H * 0.8;
