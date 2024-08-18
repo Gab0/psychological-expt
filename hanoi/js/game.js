@@ -240,7 +240,24 @@ function displayHighscores(scores) {
 function displayRebootButton() {
     const rebootButton = scene.add.rectangle(W * 0.9, H * 0.1, W * 0.05, H * 0.05, 0x40ff40).setOrigin(0, 0).setInteractive();
     rebootButton.depth = 100;
-    rebootButton.on('pointerdown', () => {
-        scene.scene.start('GameScene');
+    rebootButton.on('pointerdown', triggerReboot);
+}
+
+function triggerReboot() {
+
+    let rebootAborted = false;
+    const rebootText = scene.add.text(W * 0.5, H * 0.5, 'Rebooting in 2 seconds, click to abort', font.larger).setOrigin(0.5).setInteractive();
+    rebootText.on('pointerdown', () => {
+        rebootAborted = true;
+        rebootText.destroy();
     });
+    scene.time.delayedCall(2000, () => {
+        if (!rebootAborted) {
+            scene.scene.start('GameScene');
+        } else {
+            rebootText.destroy();
+        }
+        
+    });
+
 }
