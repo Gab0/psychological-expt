@@ -100,3 +100,51 @@ export const reloadNickname = async () => {
 if (nickname === null) {
     reloadNickname();
 }
+
+
+export class StandardBriefingScene extends Phaser.Scene {
+    constructor(gameName, messages, sceneName, nextSceneName) {
+      super({key: sceneName});
+
+      this.messages = messages;
+      this.nextSceneName = nextSceneName;
+      this.gameName = gameName;
+    }
+
+    create() {
+
+      this.messageIndex = 0;
+
+      const W = this.sys.game.config.width;
+      const H = this.sys.game.config.height;
+
+      this.add.text(W * 0.5, H * 0.1, this.gameName, font.larger).setOrigin(0.5);
+     
+      console.log(this.messages[this.messageIndex]);
+      this.message = this.add.text(
+        W * 0.5,
+        H * 0.5,
+        this.messages[this.messageIndex],
+        font.larger
+      ).setOrigin(0.5);
+
+      this.input.keyboard.on('keydown-SPACE', () => {
+        this.updateMessage();
+      });
+
+      this.input.on('pointerdown', () => {
+        this.updateMessage()
+      });
+    }
+
+    updateMessage() {
+
+      if (this.messageIndex === this.messages.length - 1) {
+        this.scene.start(this.nextSceneName);
+        return
+      }
+
+      this.messageIndex++;
+      this.message.setText(this.messages[this.messageIndex]);
+    }
+}
