@@ -1,5 +1,5 @@
 
-import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font } from '../../psyexp_core.js';
+import { PsyExpBaseConfig, StandardBriefingScene, db, makeid, nickname, fetchMessages, font } from '../../psyexp_core.js';
 
 const urlParams = new URLSearchParams(window.location.search);
 
@@ -9,43 +9,13 @@ let timerText;
 let scene = null;
 const messageMap = await fetchMessages("pt-br");
 
-class Briefing extends Phaser.Scene {
-
-	constructor() {
-		super({ key: 'Briefing' });
-	}
-
-    create() {
-        this.add.text(W * 0.5, H * 0.1, 'Tower of Hanoi', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
-        this.add.text(W * 0.5, H * 0.5, messageMap["BRIEFING_1"], { fontSize: '50px', fill: '#ff0000' }).setOrigin(0.5);
-
-		this.input.on('pointerdown', () => {
-            this.scene.start('Briefing2');
-		});
-    }
-}
-
-class Briefing2 extends Phaser.Scene {
-
-    constructor() {
-        super({ key: 'Briefing2' });
-    }
-
-    create() {
-        this.add.text(W * 0.5, H * 0.5, messageMap["BRIEFING_2"], { fontSize: '50px', fill: '#ff0000' }).setOrigin(0.5);
-
-        this.input.on('pointerdown', () => {
-            this.scene.start('GameScene');
-        });
-    }
-}
 
 class GameScene extends Phaser.Scene {
 
-	constructor() {
-		super({ key: 'GameScene' });
+    constructor() {
+        super({ key: 'GameScene' });
         scene = this;
-	}
+    }
 
     preload() {
         //this.load.image('disk1', 'disk1.png');
@@ -110,7 +80,6 @@ class GameScene extends Phaser.Scene {
 
         this.input.on('dragstart', function (pointer, gameObject) {
 
-            console.log("dragstart x", pointer.x);
             const topDisk = getTopDiskToDrag(pointer.x, pointer.y);
 
             if (!topDisk) {
@@ -178,7 +147,14 @@ class GameScene extends Phaser.Scene {
 
 }
 
-const config = PsyExpBaseConfig([Briefing, Briefing2, GameScene]);
+const briefing = new StandardBriefingScene(
+    "Tower of Hanoi",
+    [messageMap["BRIEFING_1"], messageMap["BRIEFING_2"]],
+    "Briefing",
+    "GameScene"
+);
+
+const config = PsyExpBaseConfig([briefing, GameScene]);
 const game = new Phaser.Game(config);
 
 const W = game.config.width;
@@ -263,7 +239,6 @@ function displayRebootButton() {
     const rebootButton = scene.add.rectangle(W * 0.9, H * 0.1, W * 0.05, H * 0.05, 0x40ff40).setOrigin(0, 0).setInteractive();
     rebootButton.depth = 100;
     rebootButton.on('pointerdown', () => {
-        console.log("reboot");
         scene.scene.start('GameScene');
     });
 }
