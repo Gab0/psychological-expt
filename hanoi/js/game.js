@@ -47,7 +47,7 @@ class GameScene extends Phaser.Scene {
 
         //this.add.text(W * 0.5, H * 0.1, 'Tower of Hanoi', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
         //this.add.text(W * 0.5, H * 0.15, 'Drag and drop the this.gameState.disks to the rightmost pole to solve the puzzle.', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
-        this.add.text(W * 0.7, H * 0.05, nickname, { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5);
+        this.add.text(W * 0.7, H * 0.05, nickname, font.larger).setOrigin(0.5);
 
         this.gameState.poles = pole_pos.map((x) => this.add.rectangle(x, pole_base, 20, pole_height, 0x6666ff))
 
