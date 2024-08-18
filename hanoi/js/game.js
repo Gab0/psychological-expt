@@ -186,8 +186,10 @@ function triggerWin(scene) {
     scene.gameState.timer.paused = true;
     updateDatabase(scene.gameState);
 
-    getHighscores(scene).then((scores) => {
-        displayHighscores(scores);
+    scene.time.delayedCall(500, () => {
+        getHighscores(scene).then((scores) => {
+            displayHighscores(scores);
+        });
     });
 
 }
