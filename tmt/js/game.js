@@ -8,7 +8,7 @@ class TMTScene extends Phaser.Scene {
 		super({ key: sceneName });
 		this.circleData = [];
 		this.circleRadius = 30;
-		this.currentCircle = 1;
+		this.currentCircle = 0;
 		this.lines = [];
 		this.isDrawing = false;
 		this.isGameEnded = false;
@@ -17,6 +17,8 @@ class TMTScene extends Phaser.Scene {
 		this.lastCircle = null;
 		this.wrongCircle = null;
 		this.startTime = 0;
+
+        this.markers = markers;
 	}
 
 	preload() {
@@ -29,7 +31,7 @@ class TMTScene extends Phaser.Scene {
 		this.timeText.setOrigin(1, 0);
 
 		for (let i = 0; i < 25; i++) {
-			this.createUniqueCircle(i + 1);
+			this.createUniqueCircle(i, this.markers[i]);
 		}
 				this.isPaused = false;
 				this.startTime = this.time.now;
@@ -42,7 +44,7 @@ class TMTScene extends Phaser.Scene {
 		}
 	}
 
-	createUniqueCircle(number) {
+	createUniqueCircle(index, content) {
 		let x, y, overlap;
 		do {
 			overlap = false;
@@ -57,18 +59,18 @@ class TMTScene extends Phaser.Scene {
 			}
 		} while (overlap);
 
-		this.createCircle(x, y, number);
+		this.createCircle(x, y, index, content);
 	}
 
-	createCircle(x, y, number) {
+	createCircle(x, y, index, content) {
 		let circle = this.add.circle(x, y, this.circleRadius, 0xffffff);
-		let text = this.add.text(x, y, number, { fontSize: '32px', fill: '#000' });
+		let text = this.add.text(x, y, content, { fontSize: '32px', fill: '#000' });
 		text.setOrigin(0.5, 0.5);
 		circle.setInteractive();
-		circle.num = number;
+		circle.num = index;
 		circle.on('pointerdown', () => this.onCircleClick(circle), this);
 		circle.text = text;
-		this.circleData.push({ circle, text, x, y, num: number });
+		this.circleData.push({ circle, text, x, y, num: index });
 	}
 
 	onCircleClick(circle) {
@@ -94,7 +96,7 @@ class TMTScene extends Phaser.Scene {
 			circle.setFillStyle(0xff0000);
 			this.wrongCircle = circle;
 		}
-		if (this.currentCircle > this.circleData.length) {
+		if (this.currentCircle >= this.circleData.length) {
 			this.endGame(true);
 		}
 	}
@@ -127,8 +129,14 @@ const briefing = new StandardBriefingScene(
 const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
 const letters = Array.from({ length: 25 }, (_, i) => String.fromCharCode(65 + i));
 
+const mixed = [];
+for (let i = 0; i < 25; i++) {
+	mixed.push(numbers[i]);
+	mixed.push(letters[i]);
+}
+
 const roundA = new TMTScene(numbers, "SceneA");
-const roundB = new TMTScene(letters, "SceneB");
+const roundB = new TMTScene(mixed.slice(0, 25), "SceneB");
 
 const config = PsyExpBaseConfig([briefing, roundA, roundB]);
 
