@@ -22,7 +22,7 @@ function resize() {
 	}
 }
 
-const messageMap = await fetchMessages("pt-br");
+const messageMap = await fetchMessages("pt-br", "bart");
 
 //const root = document.body.getAttribute("data-root") || "";
 const root = window.location.href.replace(/\/$/, "");

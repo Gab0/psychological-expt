@@ -53,10 +53,11 @@ function processMessageData(query_result) {
   return messageMap;
 }
 
-export async function fetchMessages(language) {
+export async function fetchMessages(language, game) {
   const {data, error} = await db.from('interface_messages')
                                 .select("*")
-                                .eq('language', language);
+                                .eq('language', language)
+                                .eq('experiment', game);
   return processMessageData(data);
 }
 

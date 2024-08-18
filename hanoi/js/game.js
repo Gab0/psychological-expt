@@ -7,7 +7,7 @@ let moveText;
 let timerText;
 
 let scene = null;
-const messageMap = await fetchMessages("pt-br");
+const messageMap = await fetchMessages("pt-br", "hanoi");
 
 
 class GameScene extends Phaser.Scene {
