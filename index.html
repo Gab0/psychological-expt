@@ -11,8 +11,10 @@
             padding: 1em;
             display: flex;
             align-items: center;
+            justify-content: center; /* Added for better centering on smaller screens */
             background-color: #f0f0f0;
         }
+
         .container {
             margin: auto;
             text-align: center;
@@ -21,37 +23,98 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             max-width: 60%;
+            width: 100%; /* Ensure it uses full width on smaller screens */
         }
+
         h1 {
             font-size: 2.5em;
             color: #333;
         }
+
         p {
             font-size: 1.2em;
             color: #666;
             margin-bottom: 40px;
         }
+
         .links {
             list-style: none;
             padding: 0;
         }
+
         .links li {
             margin: 20px 0;
         }
+
         .links a {
             text-decoration: none;
             font-size: 1.5em;
             color: #007BFF;
             transition: color 0.3s;
         }
+
         .links a:hover {
             color: #0056b3;
         }
+
         hr {
             margin: 2em;
         }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                margin: 2em; /* Reduce margin on smaller screens */
+                padding: 1em;
+            }
+
+            .container {
+                padding: 30px;
+                max-width: 80%; /* Adjust container width */
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            p {
+                font-size: 1.1em;
+                margin-bottom: 30px;
+            }
+
+            .links a {
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                margin: 1em;
+                padding: 1em;
+            }
+
+            .container {
+                padding: 20px;
+                max-width: 100%; /* Full width for very small screens */
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            p {
+                font-size: 1em;
+                margin-bottom: 20px;
+            }
+
+            .links a {
+                font-size: 1.2em;
+            }
+        }
+
     </style>
 
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
