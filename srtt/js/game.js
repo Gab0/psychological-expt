@@ -10,8 +10,8 @@ class SRTTScene extends Phaser.Scene {
         console.log(this.sequence);
         this.currentStep = 0;
 
-        const sX = [W * 0.2, W * 0.8];
-        const sY = [H * 0.2, H * 0.8];
+        const sX = [W * 0.25, W * 0.75];
+        const sY = [H * 0.25, H * 0.75];
 
         this.stimulusPositions = [
             { x: sX[0], y: sY[0] }, // Top-left
@@ -19,12 +19,10 @@ class SRTTScene extends Phaser.Scene {
             { x: sX[0], y: sY[1] }, // Bottom-left
             { x: sX[1], y: sY[1] }  // Bottom-right
         ];
-        this.stimulusSize = 50;
+        this.stimulusSize = W * 0.25;
         this.reactionTimes = [];
         this.inputModes = [];
-    }
 
-    preload() {
     }
 
     create() {
@@ -84,6 +82,7 @@ class SRTTScene extends Phaser.Scene {
         this.currentStep++;
         this.nextStimulus();
     }
+
     endExperiment() {
         console.log('Experiment completed. Reaction times:', this.reactionTimes);
         this.add.text(W * 0.5, H * 0.5, 'Experiment Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5);
