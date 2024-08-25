@@ -2,7 +2,6 @@
 import {
     PsyExpBaseConfig,
     db,
-    userId,
     makeid,
     nickname,
     fetchMessages,
@@ -127,11 +126,10 @@ class TMTScene extends Phaser.Scene {
 			};
 		   
             updateDatabase(
-                userId,
-                nickname,
                 experimentPayload,
                 "tmt"
             )
+
             if (this.scene.key === "SceneA") {
 				this.scene.start("SceneB");
 			}

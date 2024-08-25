@@ -158,8 +158,6 @@ export class StandardBriefingScene extends Phaser.Scene {
 
 
 export async function updateDatabase(
-  userId,
-  nickname,
   experimentPayload,
   experimentId
 ) {
