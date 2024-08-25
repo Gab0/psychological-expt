@@ -45,14 +45,14 @@ $$ LANGUAGE plpgsql security definer;
 
 
 grant EXECUTE on function update_experiment_run to anon;
+drop function view_experiment_runs;
 
-
-CREATE OR REPLACE FUNCTION view_experiment_runs(experiment_id text)
+CREATE OR REPLACE FUNCTION view_experiment_runs(target_experiment_id text)
 RETURNS SETOF experiment_run AS $$
 BEGIN
     RETURN QUERY
     SELECT * FROM public.experiment_run
-    WHERE experiment_id = experiment_id;
+    WHERE experiment_id = target_experiment_id;
 END;
 $$ LANGUAGE plpgsql security definer;
 

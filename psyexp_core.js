@@ -162,8 +162,6 @@ export async function updateDatabase(
   experimentId
 ) {
 
-  timestamps.push(new Date().toISOString());
-
   const payload = {
     run_id: run_id,
     user_id: userId,
@@ -177,4 +175,13 @@ export async function updateDatabase(
   console.log(res);
 }
 
-let timestamps = [];
+export async function getHighscores(experimentId, orderExpression) {
+  const {data, error} = await db.rpc('view_experiment_runs', {target_experiment_id: experimentId})
+                                .select()
+                                .neq("nickname", null)
+                                .order(orderExpression, {ascending: true})
+                                .limit(15);
+  console.log(error);
+  console.log(data);
+  return data;
+}
