@@ -1,5 +1,13 @@
 
-import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font, updateDatabase } from '../../psyexp_core.js';
+import { PsyExpBaseConfig,
+         db,
+         makeid,
+         nickname,
+         fetchMessages,
+         font,
+         updateDatabase,
+         getHighscores
+       } from '../../psyexp_core.js';
 
 class SRTTScene extends Phaser.Scene {
     constructor() {
@@ -89,8 +97,32 @@ class SRTTScene extends Phaser.Scene {
 
         updateDatabase({
             reactionTimes: this.reactionTimes,
+            meanReactionTime: this.reactionTimes.reduce((a, b) => a + b, 0) / this.reactionTimes.length,
             inputModes: this.inputModes
         }, "srtt");
+
+        this.highscores();
+    }
+
+    highscores() {
+
+        setTimeout(getHighscores("srtt", "experiment_payload -> meanReactionTime").then((scores) => {
+            this.displayHighscores(scores);
+        }), 2000);
+
+    }
+
+    displayHighscores(scores) {
+        let y = H * 0.23;
+        scores.map((score, i) => {
+            const v = score.experiment_payload.meanReactionTime;
+            if (v === undefined) return;
+
+            this.add.text(W * 0.2, y, `${i + 1}.`, font.larger);
+            this.add.text(W * 0.3, y, `${score.nickname}`, font.larger);
+            this.add.text(W * 0.7, y, `${v}`, font.larger);
+            y += 50;
+        });
     }
 }
 
