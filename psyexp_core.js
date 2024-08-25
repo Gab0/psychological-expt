@@ -91,6 +91,12 @@ export function getCookie(name) {
 
 export let nickname = getCookie("username");
 
+export let userId = getCookie("user_id");
+if (userId === null) {
+    userId = makeid(10);
+    // setCookie("user_id", userId, 365);
+}
+
 export const reloadNickname = async () => {
   const result = await db.rpc("gen_nickname").then((res) => {
     console.log(res);
@@ -149,3 +155,28 @@ export class StandardBriefingScene extends Phaser.Scene {
       this.message.setText(this.messages[this.messageIndex]);
     }
 }
+
+
+export async function updateDatabase(
+  userId,
+  nickname,
+  experimentPayload,
+  experimentId
+) {
+
+  timestamps.push(new Date().toISOString());
+
+  const payload = {
+    run_id: run_id,
+    user_id: userId,
+    nickname: nickname,
+    experiment_payload: experimentPayload,
+    experiment_id: experimentId,
+    useragent: window.navigator.userAgent,
+  }
+
+  const res = await db.rpc('update_experiment_run', payload);
+  console.log(res);
+}
+
+let timestamps = [];
