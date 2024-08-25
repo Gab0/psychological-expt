@@ -8,6 +8,7 @@ import {
     font,
     StandardBriefingScene,
     updateDatabase,
+    getHighscores
 } from '../../psyexp_core.js';
 
 document.title = 'Trail Making Test (TMT)';
@@ -28,6 +29,7 @@ class TMTScene extends Phaser.Scene {
 		this.startTime = 0;
 
         this.markers = markers;
+
 	}
 
 	create() {
@@ -120,21 +122,13 @@ class TMTScene extends Phaser.Scene {
 		if (success) {
 			this.add.text(M, 450, 'Test Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5, 0.5);
 
-            const experimentPayload = {
-				nodeTimes: userMetrics,
-                totalTimes: objectMap(userMetrics, (times) => times[times.length-1]),
-			};
-		   
-            updateDatabase(
-                experimentPayload,
-                "tmt"
-            )
+            this.updateDatabase();
 
             if (this.scene.key === "SceneA") {
 				this.scene.start("SceneB");
 			}
-            this.scene.stop();
-            displayHighscores(this);
+          
+            this.highscores();
 		} else {
 			this.add.text(M, 450, 'Test Failed!', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5, 0.5);
 		}
@@ -142,6 +136,46 @@ class TMTScene extends Phaser.Scene {
 			circle.disableInteractive();
 		});
 	}
+
+    updateDatabase() {
+        const totalTimes = objectMap(userMetrics, (times) => times[times.length-1])
+        const experimentPayload = {
+            nodeTimes: userMetrics,
+            totalTimes: totalTimes,
+            combinedTimes: totalTimes["SceneA"] + totalTimes["SceneB"]
+        };
+
+        updateDatabase(
+            experimentPayload,
+            "tmt"
+        )
+    }
+
+    highscores() {
+        setTimeout(
+            getHighscores("tmt", "experiment_payload -> combinedTimes")
+                .then((scores) => {
+                    this.displayHighscores(scores);
+                }),
+            2000
+        );
+    }
+
+    displayHighscores(scores) {
+        let y = H * 0.23;
+        let i = 1;
+        scores.map((score) => {
+            let v = score.experiment_payload.combinedTimes;
+            if (v === undefined) return;
+
+            this.add.text(W * 0.2, y, `${i}.`, font.larger);
+            this.add.text(W * 0.3, y, `${score.nickname}`, font.larger);
+            this.add.text(W * 0.7, y, `${(v / 1000).toFixed(2)}s`, font.larger);
+            i++;
+            y += H * 0.05;
+        });
+    };
+
 }
 
 function objectMap(obj, fn) {
@@ -151,18 +185,7 @@ function objectMap(obj, fn) {
   });
   return newObject;
 }
-const displayHighscores = (scores) => {
-	db.collection("tmt").orderBy("time").limit(10).get().then(
-        (querySnapshot) => {
-		let i = 1;
-		let text = "Highscores:\n";
-		querySnapshot.forEach((doc) => {
-			text += `${i}. ${doc.data().nickname} - ${doc.data().time.toFixed(2)}s\n`;
-			i++;
-		});
-		alert(text);
-	});
-};
+
 
 const messageMap = await fetchMessages("pt-br", "tmt");
 const briefing = new StandardBriefingScene(
@@ -195,3 +218,4 @@ const W = game.config.width;
 const H = game.config.height;
 const M = W * 0.5;
 const Y = H * 0.8;
+
