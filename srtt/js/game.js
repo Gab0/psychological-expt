@@ -1,5 +1,5 @@
 
-import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font } from '../../psyexp_core.js';
+import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font, updateDatabase } from '../../psyexp_core.js';
 
 class SRTTScene extends Phaser.Scene {
     constructor() {
@@ -87,6 +87,11 @@ class SRTTScene extends Phaser.Scene {
     endExperiment() {
         console.log('Experiment completed. Reaction times:', this.reactionTimes);
         this.add.text(W * 0.5, H * 0.5, 'Experiment Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5);
+
+        updateDatabase({
+            reactionTimes: this.reactionTimes,
+            inputModes: this.inputModes
+        }, "srtt");
     }
 }
 
