@@ -1,5 +1,15 @@
 
-import { PsyExpBaseConfig, db, makeid, nickname, fetchMessages, font, StandardBriefingScene } from '../../psyexp_core.js';
+import {
+    PsyExpBaseConfig,
+    db,
+    userId,
+    makeid,
+    nickname,
+    fetchMessages,
+    font,
+    StandardBriefingScene,
+    updateDatabase,
+} from '../../psyexp_core.js';
 
 document.title = 'Trail Making Test (TMT)';
 
@@ -21,10 +31,6 @@ class TMTScene extends Phaser.Scene {
         this.markers = markers;
 	}
 
-	preload() {
-		this.load.image('circle', 'https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'); // Simple placeholder image
-	}
-
 	create() {
 		this.graphics = this.add.graphics({ lineStyle: { width: 4, color: 0xffffff } });
 		this.timeText = this.add.text(700, 16, 'Time: 0.00', { fontSize: '32px', fill: '#ffffff' });
@@ -33,8 +39,11 @@ class TMTScene extends Phaser.Scene {
 		for (let i = 0; i < 25; i++) {
 			this.createUniqueCircle(i, this.markers[i]);
 		}
-				this.isPaused = false;
-				this.startTime = this.time.now;
+
+		this.isPaused = false;
+		this.startTime = this.time.now;
+
+        userMetrics[this.scene.key] = [];
 	}
 
 	update(time) {
@@ -73,22 +82,29 @@ class TMTScene extends Phaser.Scene {
 		this.circleData.push({ circle, text, x, y, num: index });
 	}
 
+    checkCorrectCircle(circle) {
+		if (this.lastCircle) {
+			let line = new Phaser.Geom.Line(this.lastCircle.x, this.lastCircle.y, circle.x, circle.y);
+			this.lines.push(line);
+			this.graphics.strokeLineShape(line);
+		}
+		circle.setFillStyle(0x00ff00);
+		circle.disableInteractive();
+		this.lastCircle = circle;
+		this.currentCircle++;
+
+		if (this.wrongCircle) {
+			this.wrongCircle.setFillStyle(0xffffff);
+			this.wrongCircle = null;
+		}
+
+        userMetrics[this.scene.key].push(this.time.now - this.startTime);
+    }
+
 	onCircleClick(circle) {
 		if (this.isPaused || this.isGameEnded) return;
 		if (circle.num === this.currentCircle) {
-			if (this.lastCircle) {
-				let line = new Phaser.Geom.Line(this.lastCircle.x, this.lastCircle.y, circle.x, circle.y);
-				this.lines.push(line);
-				this.graphics.strokeLineShape(line);
-			}
-			circle.setFillStyle(0x00ff00);
-			circle.disableInteractive();
-			this.lastCircle = circle;
-			this.currentCircle++;
-			if (this.wrongCircle) {
-				this.wrongCircle.setFillStyle(0xffffff);
-				this.wrongCircle = null;
-			}
+			this.checkCorrectCircle(circle);
 		} else {
 			if (this.wrongCircle) {
 				this.wrongCircle.setFillStyle(0xffffff);
@@ -104,10 +120,23 @@ class TMTScene extends Phaser.Scene {
 	endGame(success) {
 		if (success) {
 			this.add.text(M, 450, 'Test Completed!', { fontSize: '32px', fill: '#ffffff' }).setOrigin(0.5, 0.5);
+
+            const experimentPayload = {
+				nodeTimes: userMetrics,
+                totalTimes: objectMap(userMetrics, (times) => times[times.length-1]),
+			};
+		   
+            updateDatabase(
+                userId,
+                nickname,
+                experimentPayload,
+                "tmt"
+            )
             if (this.scene.key === "SceneA") {
 				this.scene.start("SceneB");
 			}
             this.scene.stop();
+            displayHighscores(this);
 		} else {
 			this.add.text(M, 450, 'Test Failed!', { fontSize: '32px', fill: '#ff0000' }).setOrigin(0.5, 0.5);
 		}
@@ -116,6 +145,26 @@ class TMTScene extends Phaser.Scene {
 		});
 	}
 }
+
+function objectMap(obj, fn) {
+  const newObject = {};
+  Object.keys(obj).forEach((key) => {
+    newObject[key] = fn(obj[key]);
+  });
+  return newObject;
+}
+const displayHighscores = (scores) => {
+	db.collection("tmt").orderBy("time").limit(10).get().then(
+        (querySnapshot) => {
+		let i = 1;
+		let text = "Highscores:\n";
+		querySnapshot.forEach((doc) => {
+			text += `${i}. ${doc.data().nickname} - ${doc.data().time.toFixed(2)}s\n`;
+			i++;
+		});
+		alert(text);
+	});
+};
 
 const messageMap = await fetchMessages("pt-br", "tmt");
 const briefing = new StandardBriefingScene(
@@ -134,6 +183,8 @@ for (let i = 0; i < 25; i++) {
 	mixed.push(numbers[i]);
 	mixed.push(letters[i]);
 }
+
+const userMetrics = {};
 
 const roundA = new TMTScene(numbers, "SceneA");
 const roundB = new TMTScene(mixed.slice(0, 25), "SceneB");
