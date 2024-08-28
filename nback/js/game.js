@@ -1,5 +1,10 @@
 
-import { PsyExpBaseConfig, font } from '../../psyexp_core.js';
+import { PsyExpBaseConfig,
+         font,
+         updateDatabase,
+         getHighscores,
+         displayHighscores
+       } from '../../psyexp_core.js';
 
 class NBackTaskScene extends Phaser.Scene {
     constructor() {
@@ -16,8 +21,6 @@ class NBackTaskScene extends Phaser.Scene {
         this.userResponses = [];
         this.userResults = [];
     }
-
-    preload() {}
 
     drawButton(color, text, x, y, size, onClick = () => {}) {
         const button = this.add.rectangle(x, y, size, size, color).setOrigin(0.5);
@@ -110,6 +113,8 @@ class NBackTaskScene extends Phaser.Scene {
 
     endTask() {
         this.helpMessage.setText('Task Completed');
+        this.updateDatabase();
+        this.highscores();
     }
 
     displayResult(result) {
@@ -125,8 +130,29 @@ class NBackTaskScene extends Phaser.Scene {
         });
     }
 
-    update() {
-        // Any additional logic for each frame
+    updateDatabase() {
+        updateDatabase({
+            userResponses: this.userResponses,
+            userResults: this.userResults,
+            winRatio: this.userResults.filter((r) => r).length / this.userResults.length,
+            nBackValue: this.nBackValue
+        }, "nback");
+    }
+
+    highscores() {
+          setTimeout(
+            getHighscores("nback", "experiment_payload -> winRatio DESC")
+                .then((scores) => {
+                    displayHighscores(W, H, scores, this.renderSingleScore);
+                }),
+            2000
+        );
+    }
+
+    renderSingleScore(score) {
+        let v = score.experiment_payload.winRatio;
+        if (v === undefined) return undefined;
+        return `${(v * 100).toFixed(2)}%`;
     }
 }
 
