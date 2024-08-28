@@ -20,9 +20,10 @@ export const PsyExpBaseConfig = (scenes) => {
 };
 
 export const font = {
-    normal: { fontSize: '40px', fill: '#000', backgroundColor: '#f0f0f0' },
-    larger: { fontSize: '44px', fill: '#101010', backgroundColor: '#f0f0f0' },
-    largest: { fontSize: '52px', fill: '#000', fontWeight: 'bold' }
+  normal: { fontSize: '40px', fill: '#000', backgroundColor: '#f0f0f0' },
+  larger: { fontSize: '44px', fill: '#101010', backgroundColor: '#f0f0f0' },
+  largest: { fontSize: '52px', fill: '#000', fontWeight: 'bold' },
+  help: { fontSize: 24, fill: '#fff' }
 }
 
 const db_url = "https://obxyvfzojhcpfeeoxrez.supabase.co"
@@ -185,3 +186,18 @@ export async function getHighscores(experimentId, orderExpression) {
   console.log(data);
   return data;
 }
+
+export function displayHighscores(W, H, scores, renderSingleScore) {
+  let y = H * 0.23;
+  let i = 1;
+  scores.map((score) => {
+    const v = renderSingleScore(score);
+    if (v === undefined) return;
+
+    this.add.text(W * 0.2, y, `${i}.`, font.larger);
+    this.add.text(W * 0.3, y, `${score.nickname}`, font.larger);
+    this.add.text(W * 0.7, y, v, font.larger);
+    i++;
+    y += H * 0.05;
+  });
+};
