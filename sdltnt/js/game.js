@@ -18,9 +18,9 @@ class SDLTNTScene extends Phaser.Scene {
         super({ key: 'SDLTNTScene' });
     }
    
-    preload() {}
-
     create() {
+
+        this.userSuccess = [];
         const buttonSize = 50;
         this.hiddenColor = 0x000000;
         this.visibleColor = 0xffffff;
@@ -42,16 +42,127 @@ class SDLTNTScene extends Phaser.Scene {
         // Start button
         this.startButton = this.add.rectangle(M * 1.1, H * 0.5, buttonSize, buttonSize, this.visibleColor).setInteractive().setOrigin(0.5);
         this.add.text(this.startButton.x, this.startButton.y, '👁️', { fontSize: '24px', fill: '#000' }).setOrigin(0.5);
-        this.startButton.on('pointerdown', () => startTest(this));
+        this.startButton.on('pointerdown', () => this.startTest(this));
 
         // Submit button
         submitButton = this.add.rectangle(M * 0.9, H * 0.5, buttonSize, buttonSize, 0xffffff).setInteractive().setOrigin(0.5);
         this.add.text(submitButton.x, submitButton.y, '✔️️', { fontSize: '24px', fill: '#000' }).setOrigin(0.5);
-        submitButton.on('pointerdown', () => submitAnswer(this));
+        submitButton.on('pointerdown', () => this.submitAnswer(this));
 
         // Keyboard input
-        this.input.keyboard.on('keydown', handleKeyInput);
+        this.input.keyboard.on('keydown', this.handleKeyInput);
+
+        this.createHelpLayer();
+        this.selectivelyShowTheHelp(0);
     }
+
+    createHelpLayer() {
+        //const helpBg = this.add.rectangle(0, 0, W, H, 0x000000, 0.7).setOrigin(0);
+        this.eyeButtonText = this.add.text(W * 0.73, H * 0.5, '🢀 Click on the eye to reveal the input.', font.help).setOrigin(0.5);
+        this.sequenceText = this.add.text(W * 0.25, H * 0.111, 'Memorize this sequence of digits. 🢂', font.help).setOrigin(0.5);
+        this.keyboardText = this.add.text(W * 0.24, H * 0.75, 'Use the keypad to enter the digits. 🢂', font.help).setOrigin(0.5);
+        this.okButtonText = this.add.text(W * 0.26, H * 0.5, 'Press OK to submit the entered digits. 🢂', font.help).setOrigin(0.5);
+
+        this.helpLayer = [
+            this.eyeButtonText,
+            this.sequenceText,
+            this.keyboardText,
+            this.okButtonText
+        ];
+
+        this.eyeButtonText.visible = true;
+    }
+
+    selectivelyShowTheHelp(showPart) {
+        this.helpLayer.forEach((element) => {
+            element.visible = false;
+        });
+
+        if (showPart === null) {
+            return;
+        }
+
+        if (currentLevel > 5) {
+            return;
+        }
+
+        this.helpLayer[showPart].visible = true;
+
+    }
+
+    startTest() {
+        digitSequence = generateSequence(currentLevel);
+        this.selectivelyShowTheHelp(1);
+        displaySequence(this);
+    }
+
+    finishExperiment() {
+        this.keypadEnabled = false;
+        this.updateDatabase();
+        this.highscores();
+    }
+
+    submitAnswer() {
+        if (compareArrays(digitSequence, userSequence)) {
+            this.keypadEnabled = false;
+            feedbackText.setText('Correct! Moving to next level.');
+            this.userSuccess.push(currentLevel);
+
+            this.selectivelyShowTheHelp(0);
+
+            currentLevel++;
+            this.startButton.setFillStyle(this.visibleColor);
+            if (currentLevel > 9) {
+                this.finishExperiment();
+            }
+        } else {
+            feedbackText.setText('Incorrect. Try again.');
+            this.userSuccess.push(-currentLevel);
+        }
+        userSequence = [];
+
+        scene.time.delayedCall(2000, () => {
+            feedbackText.setText('');
+            inputText.setText('');
+        });
+    }
+
+    renderSingleScore() {
+        let v = score.experiment_payload.winRatio;
+        if (v === undefined) return undefined;
+        return `${(v * 100).toFixed(2)}%`;
+    }
+
+    highscores() {
+       setTimeout(
+        getHighscores("sdltnt", "experiment_payload -> winRatio DESC")
+            .then((scores) => {
+                displayHighscores(W, H, scores, this.renderSingleScore);
+            }),
+        2000
+       );
+    }
+
+    updateDatabase() {
+        updateDatabase({ winRatio: score.experiment_payload.winRatio }, "sdltnt");
+    }
+
+    pushInput(value) {
+        userSequence.push(value);
+
+        if (userSequence.length == currentLevel) {
+            this.selectivelyShowTheHelp(3);
+        }
+
+        refreshInput();
+    }
+
+    handleKeyInput(event) {
+        if (event.keyCode >= 48 && event.keyCode <= 57) {
+            this.pushInput(event.key);
+        }
+    }
+
 }
 
 function createKeypad(scene) {
@@ -113,8 +224,7 @@ function createKeypad(scene) {
                     return;
                 }
                
-                userSequence.push(key);
-                refreshInput();
+                scene.pushInput(key);
             });
 
             keyButton.on('pointerup', () => {
@@ -124,10 +234,6 @@ function createKeypad(scene) {
     });
 }
 
-function startTest(scene) {
-    digitSequence = generateSequence(currentLevel);
-    displaySequence(scene);
-}
 
 function generateSequence(length) {
     return Array.from({ length }, () => Math.floor(Math.random() * 10));
@@ -141,36 +247,15 @@ function displaySequence(scene) {
         inputText.setText('Your input: ');
         scene.startButton.setFillStyle(scene.hiddenColor);
         scene.keypadEnabled = true;
+        scene.selectivelyShowTheHelp(2);
     });
 }
 
-function handleKeyInput(event) {
-    if (event.keyCode >= 48 && event.keyCode <= 57) {
-        userSequence.push(event.key);
-        refreshInput();
-    }
-}
 
 function refreshInput() {
     inputText.setText('Your input: ' + userSequence.join(' '));
 }
 
-function submitAnswer(scene) {
-    if (compareArrays(digitSequence, userSequence)) {
-        scene.keypadEnabled = false;
-        feedbackText.setText('Correct! Moving to next level.');
-        currentLevel++;
-        scene.startButton.setFillStyle(scene.visibleColor);
-    } else {
-        feedbackText.setText('Incorrect. Try again.');
-    }
-    userSequence = [];
-
-    scene.time.delayedCall(2000, () => {
-        feedbackText.setText('');
-        inputText.setText('');
-    });
-}
 
 function compareArrays(arr1, arr2) {
     return arr1.length === arr2.length && arr1.every((value, index) => value === parseInt(arr2[index]));
