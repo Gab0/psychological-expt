@@ -9,7 +9,7 @@ import { PsyExpBaseConfig,
 class NBackTaskScene extends Phaser.Scene {
     constructor() {
         super({ key: 'NBackTaskScene' });
-        this.stimuli = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+        this.stimuli = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 
         this.nBackValue = 2; // N-Back level
         this.sequence = [];
@@ -24,7 +24,7 @@ class NBackTaskScene extends Phaser.Scene {
 
     drawButton(color, text, x, y, size, onClick = () => {}) {
         const button = this.add.rectangle(x, y, size, size, color).setOrigin(0.5);
-        this.add.text(x, y, text, { fontSize: size * 0.7, fill: '#fff' }).setOrigin(0.5);
+        button.text = this.add.text(x, y, text, { fontSize: size * 0.7, fill: '#fff' }).setOrigin(0.5);
 
         button.setInteractive();
         button.on('pointerdown', onClick);
@@ -46,7 +46,42 @@ class NBackTaskScene extends Phaser.Scene {
         const buttonYes = this.drawButton(0x00d000, "Y", W * 0.7, H * 0.7, 150, () => this.checkAnswer(true));
         const buttonNo = this.drawButton(0xd00000, "N", W * 0.3, H * 0.7, 150, () => this.checkAnswer(false));
 
+        this.createHelpLayer();
         this.startTask();
+    }
+
+    createHelpLayer() {
+        this.helpMode = true;
+
+        this.helperButtonSet = Array(this.nBackValue).fill(null).map((_, i) => {
+            return this.drawButton(i === 0 ? 0x505050 : 0xa0a0a0, '', W * (0.4 - 0.1 * i), H * 0.5, 120, () => null).setOrigin(0.5);
+        });
+
+        this.helpText = this.add.text(
+            W * (0.5 - 0.1 * this.nBackValue),
+            H * 0.4,
+            'The answer is "YES" ("Y")\nwhen this symbol is equal\nto the current symbol.',
+            { fontSize: '24px', fill: '#fff' }
+        ).setOrigin(0.5);
+
+
+    }
+
+    updateHelpLayer() {
+        if (!this.helpMode) return;
+
+        this.helperButtonSet.forEach((button, i) => {
+            button.text.setText(this.sequence[this.currentStimulusIndex - 1 - i] || '');
+        });
+    }
+
+    destroyHelpLayer() {
+        this.helpMode = false;
+        this.helpText.destroy();
+        this.helperButtonSet.forEach((button) => {
+            button.text.destroy();
+            button.destroy()
+        });
     }
 
     startTask() {
@@ -64,8 +99,14 @@ class NBackTaskScene extends Phaser.Scene {
     }
 
     displayStimulus() {
+        if (this.currentStimulusIndex === 5) {
+            this.destroyHelpLayer();
+        }
+
         if (this.currentStimulusIndex < this.sequence.length) {
             this.stimulusDisplay.setText(this.sequence[this.currentStimulusIndex]);
+            this.updateHelpLayer();
+
             this.stimulusBacklight.setAlpha(1.0);
             this.time.delayedCall(100, () => this.stimulusBacklight.setAlpha(0.0), [], this);
             this.inputEnabled = true;
@@ -95,6 +136,11 @@ class NBackTaskScene extends Phaser.Scene {
 
     checkAnswer(userAnswer) {
         console.log(userAnswer);
+
+        if (this.currentStimulusIndex < this.nBackValue) {
+            return;
+        }
+
         // Check if the response is correct
         const result = this.checkMatch() === userAnswer;
         if (this.userResponses[this.currentStimulusIndex] === null) {
