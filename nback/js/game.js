@@ -1,5 +1,6 @@
 
 import { PsyExpBaseConfig,
+         fetchMessages,
          font,
          updateDatabase,
          getHighscores,
@@ -39,7 +40,12 @@ class NBackTaskScene extends Phaser.Scene {
         this.stimulusBackground = this.add.rectangle(W * 0.5, H * 0.5, size, size, 0xfff).setOrigin(0.5);
         this.stimulusDisplay = this.add.text(W * 0.5, H * 0.5, '', { fontSize: size * 0.9, fill: 0xfff }).setOrigin(0.5);
 
-        this.helpMessage = this.add.text(W * 0.5, H * 0.9, 'Press Y for match, N for no match', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
+        this.helpMessage = this.add.text(
+            W * 0.5,
+            H * 0.9,
+            messageMap['HELP_MESSAGE'],
+            { fontSize: '24px', fill: '#fff' }
+        ).setOrigin(0.5);
         
         this.input.keyboard.on('keydown', this.handleInput, this);
 
@@ -60,7 +66,7 @@ class NBackTaskScene extends Phaser.Scene {
         this.helpText = this.add.text(
             W * (0.5 - 0.1 * this.nBackValue),
             H * 0.4,
-            'The answer is "YES" ("Y")\nwhen this symbol is equal\nto the current symbol.',
+            messageMap["HELP_LAYER_MESSAGE"],
             { fontSize: '24px', fill: '#fff' }
         ).setOrigin(0.5);
 
@@ -202,6 +208,7 @@ class NBackTaskScene extends Phaser.Scene {
     }
 }
 
+const messageMap = await fetchMessages("en-us", "nback");
 
 const config = PsyExpBaseConfig([NBackTaskScene])
 const game = new Phaser.Game(config);
