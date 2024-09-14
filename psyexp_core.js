@@ -58,7 +58,8 @@ export async function fetchMessages(language, game) {
   const {data, error} = await db.from('interface_messages')
                                 .select("*")
                                 .eq('language', language)
-                                .eq('experiment', game);
+                                .eq('experiment', game)
+                                .eq('outdated', false);
   return processMessageData(data);
 }
 
