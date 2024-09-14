@@ -22,7 +22,7 @@ function resize() {
 	}
 }
 
-const messageMap = await fetchMessages("pt-br", "bart");
+const messageMap = await fetchMessages("en-us", "bart");
 
 //const root = document.body.getAttribute("data-root") || "";
 const root = window.location.href.replace(/\/$/, "");
@@ -118,8 +118,6 @@ class GameScene extends Phaser.Scene {
 		lastBalloonScoreText = this.add.text(W * 0.01, H * 0.1, '', font.normal);
 		setLastBalloonScore(0);
 
-		const message_keyboard = 'Press SPACE to pump the balloon, and ENTER to collect its current value';
-		const message_touch = 'Tap the balloon to pump it, and tap the piggy bank to collect its current value';
 		helperText = this.add.text(W * 0.01, H * 0.91, messageMap["HELP_POINTER"], font.normal);
 
 		balloonCounterText = this.add.text(20, H * 0.2, '', font.larger);
@@ -130,7 +128,7 @@ class GameScene extends Phaser.Scene {
 
 		createCollectButton.bind(this)();
 
-		totalScoreText = this.add.text(W * 0.85, H * 0.82, '', { fontSize: '50px', fill: '#fff' });
+		totalScoreText = this.add.text(W * 0.85, H * 0.77, '', { fontSize: '50px', fill: '#fff' });
 		setTotalScore(totalScore);
 		initializeBalloonSchedule();
 		console.log(balloonSchedule);
@@ -235,11 +233,11 @@ function createPumpButton() {
 
 function createCollectButton() {
 	let collectButton = this.add
-		.image(W * 0.9, H * 0.8, 'piggy')
+		.image(W * 0.9, H * 0.75, 'piggy')
 		.setTint('0x000000')
 		.setInteractive();
 
-	collectButton.setScale(0.5);
+	collectButton.setScale(0.6);
 
 	collectButton.on('pointerdown', collectScore, this);
 }
@@ -264,11 +262,11 @@ function setCurrentScore(score) {
 }
 
 function setLastBalloonScore(score) {
-	lastBalloonScoreText.setText(`Last Balloon Score: R$${score.toFixed(2)}`);
+	lastBalloonScoreText.setText(messageMap['LAST_BALLOON_SCORE'].replace('XXX', score.toFixed(2)));
 }
 
 function setTotalScore(score) {
-	totalScoreText.setText(`R$${totalScore.toFixed(2)}`);
+	totalScoreText.setText(messageMap['TOTAL_SCORE'].replace('XXX', score.toFixed(2)));
 }
 
 function protoPumpBalloon(msElapsed) {
@@ -348,7 +346,7 @@ function resetBalloon() {
 	balloon.setScale(balloonSize);
 	balloon.setTint(balloonColors[currentColorIndex]);
 	currentBalloonIndex++;
-	balloonCounterText.setText(`Balloon ${currentBalloonIndex}/${balloonSchedule.length}`);
+	balloonCounterText.setText(`${currentBalloonIndex}/${balloonSchedule.length}`);
 
 	if (currentBalloonIndex > balloonSchedule.length) {
 		setGameOver();
@@ -374,7 +372,7 @@ function displayHighscores(scores) {
 	let y = H * 0.28;
 	scores.map((score, i) => {
 		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
-		scene.add.text(W * 0.64, y + 40 * i, `R$${score.score.toFixed(2)}`, font.normal);
+		scene.add.text(W * 0.64, y + 40 * i, messageMap["TOTAL_SCORE"].replace('XXX', score.score.toFixed(2)), font.normal);
 	});
 }
 
