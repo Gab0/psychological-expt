@@ -34,7 +34,9 @@ def translate_message(text, target_language):
                 "role": "system",
                 "content": f"You are a translation assistant. "
                 f"The user asks you to translate a message to {target_language}. "
-                "Please respect the original message formatting: words per line and line breaks."
+                "Please respect the original message formatting: words per line and line breaks. "
+                "'XXX' segments in the messages must be preserved. "
+                "Try to translate currency symbols such as 'R$' what is appropriated in the target language."
             },
             {
                 "role": "user",
