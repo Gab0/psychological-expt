@@ -177,12 +177,23 @@ export async function updateDatabase(
   console.log(res);
 }
 
-export async function getHighscores(experimentId, orderExpression) {
-  const {data, error} = await db.rpc('view_experiment_runs', {target_experiment_id: experimentId})
-                                .select()
-                                .neq("nickname", null)
-                                .order(orderExpression, {ascending: true})
-                                .limit(15);
+export async function getHighscores(
+  experimentId,
+  orderExpression,
+  ascending = true,
+  further_filtering = (x) => {x}
+) {
+
+  const query = db.rpc(
+    'view_experiment_runs',
+    {target_experiment_id: experimentId}
+  )
+                  .select()
+                  .neq("nickname", null)
+                  .order(orderExpression, {ascending: ascending});
+
+  const {data, error} = await further_filtering(query).limit(15);
+
   console.log(error);
   console.log(data);
   return data;

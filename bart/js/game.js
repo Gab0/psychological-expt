@@ -1,26 +1,15 @@
 // Expects 'Phaser' to be a global variable;
 
-import { update_database, getHighscores } from './database.js';
-import { font, nickname, PsyExpBaseConfig, fetchMessages } from '../../psyexp_core.js';
+import {
+    font,
+    nickname,
+    PsyExpBaseConfig,
+    fetchMessages,
+    updateDatabase,
+    getHighscores,
+} from '../../psyexp_core.js';
 
 const required = [Phaser];
-//.map(type => (type === 'undefined')).some(Boolean);
-
-
-function resize() {
-	var canvas = document.querySelector('canvas');
-	var windowWidth = window.innerWidth;
-	var windowHeight = window.innerHeight;
-	var windowRatio = windowWidth / windowHeight;
-	var gameRatio = game.config.width / game.config.height;
-	if (windowRatio < gameRatio) {
-		canvas.style.width = windowWidth + 'px';
-		canvas.style.height = windowWidth / gameRatio + 'px';
-	} else {
-		canvas.style.width = windowHeight * gameRatio + 'px';
-		canvas.style.height = windowHeight + 'px';
-	}
-}
 
 const messageMap = await fetchMessages("en-us", "bart");
 
@@ -55,7 +44,12 @@ class InstructionsScene extends Phaser.Scene {
 			wordWrap: { width: this.cameras.main.width - 100 },
 		};
 
-		const text = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, instructionsText, instructionsTextStyle).setOrigin(0.5);
+		const text = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            instructionsText,
+            instructionsTextStyle
+        ).setOrigin(0.5);
 
 		// Permite que o jogador avance pressionando ENTER ou clicando na tela
 		this.input.keyboard.on('keydown-ENTER', () => {
@@ -202,7 +196,7 @@ const game = new Phaser.Game(config);
 const W = game.config.width;
 const H = game.config.height;
 
-//resize();
+
 function shuffleArray(array) {
 	for (let i = array.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
@@ -293,7 +287,7 @@ function popBalloon() {
 
 	balloonScores.push(0);
     balloonExplosions.push(currentScore);
-	updateDatabase();
+	updateSessionRecord();
    
 	resetBalloon();
 	disablePumping();
@@ -302,8 +296,15 @@ function popBalloon() {
 	currentScore = 0;
 }
 
-function updateDatabase() {
-	update_database(totalScore, balloonScores, balloonExplosions, balloonSchedule);
+function updateSessionRecord() {
+
+	updateDatabase({
+        totalScore: totalScore,
+        balloonScores: balloonScores,
+        balloonExplosions: balloonExplosions,
+        balloonSchedule: balloonSchedule,
+    }, "bart");
+
 }
 
 function collectScore() {
@@ -324,7 +325,7 @@ function collectScore() {
 
 	balloonScores.push(currentScore);
     balloonExplosions.push(0);
-	updateDatabase();
+	updateSessionRecord();
 
 	resetBalloon();
 }
@@ -362,7 +363,11 @@ function setGameOver() {
 
 	helperText.setText(messageMap["GAME_OVER"]);
 
-	setTimeout(getHighscores().then((scores) => {
+	setTimeout(getHighscores(
+        "bart",
+        "experiment_payload -> totalScore",
+        false
+    ).then((scores) => {
 		displayHighscores(scores);
 	}), 2000);
 }
@@ -372,7 +377,7 @@ function displayHighscores(scores) {
 	let y = H * 0.28;
 	scores.map((score, i) => {
 		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
-		scene.add.text(W * 0.64, y + 40 * i, messageMap["TOTAL_SCORE"].replace('XXX', score.score.toFixed(2)), font.normal);
+		scene.add.text(W * 0.64, y + 40 * i, messageMap["TOTAL_SCORE"].replace('XXX', score.experiment_payload.totalScore.toFixed(2)), font.normal);
 	});
 }
 

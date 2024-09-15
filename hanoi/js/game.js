@@ -1,5 +1,14 @@
 
-import { PsyExpBaseConfig, StandardBriefingScene, db, makeid, nickname, fetchMessages, font } from '../../psyexp_core.js';
+import { PsyExpBaseConfig,
+         StandardBriefingScene,
+         db,
+         makeid,
+         updateDatabase,
+         nickname,
+         fetchMessages,
+         getHighscores,
+         font
+       } from '../../psyexp_core.js';
 
 const urlParams = new URLSearchParams(window.location.search);
 
@@ -26,7 +35,6 @@ class GameScene extends Phaser.Scene {
     create() {
 
         this.gameState = {
-            runId: makeid(10),
             diskCount: parseInt(urlParams.get('ndisk'), 10) || 5,
             poles: [],
             disks: [],
@@ -143,8 +151,6 @@ class GameScene extends Phaser.Scene {
         this.gameState.timer = this.time.addEvent({ delay: 100, callback: updateTimer.bind(this), callbackScope: this, loop: true });
 }
 
-    update() {}
-
 }
 
 const briefing = new StandardBriefingScene(
@@ -184,10 +190,21 @@ function checkWinCondition() {
 function triggerWin(scene) {
     scene.add.text(W * 0.5, H * 0.2, 'You Win!', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
     scene.gameState.timer.paused = true;
-    updateDatabase(scene.gameState);
+
+    updateDatabase({
+        nb_disk: scene.gameState.diskCount,
+        nb_move: scene.gameState.moveCount,
+        elapsed_time: scene.gameState.lastTime,
+        timestamps: scene.gameState.timestamps
+    }, "hanoi")
 
     scene.time.delayedCall(500, () => {
-        getHighscores(scene).then((scores) => {
+        getHighscores(
+            "hanoi",
+            "experiment_payload -> elapsed_time",
+            true,
+            (q) => {return q.eq("experiment_payload -> nb_disk", scene.gameState.diskCount)}
+        ).then((scores) => {
             displayHighscores(scores);
         });
     });
@@ -196,34 +213,11 @@ function triggerWin(scene) {
 
 function updateTimer() {
     this.gameState.lastTime = getElapsedTime();
-    timerText.setText('Time: ' + this.gameState.lastTime + 's');
+    timerText.setText('Time: ' + this.gameState.lastTime.toFixed(2) + 's');
 }
 
 function getElapsedTime() {
-    return ((new Date() - scene.gameState.startTime) / 1000).toFixed(2);
-}
-
-async function updateDatabase(gameState) {
-
-    const res = await db.from('hanoi_runs').insert({
-        id: gameState.runId,
-        useragent: window.navigator.userAgent,
-        nickname: nickname,
-        nb_disk: gameState.diskCount,
-        nb_move: gameState.moveCount,
-        elapsed_time: gameState.lastTime,
-        timestamps: gameState.timestamps
-    });
-
-    console.log(res);
-
-}
-
-export async function getHighscores(scene) {
-    const {data, error} = await db.from('hanoi_highscores').select().neq("nickname", null).eq("nb_disk", scene.gameState.diskCount).limit(15);
-    console.log(error);
-    console.log(data);
-    return data;
+    return (new Date() - scene.gameState.startTime) / 1000;
 }
 
 function displayHighscores(scores) {
@@ -232,8 +226,8 @@ function displayHighscores(scores) {
     scores.map((score, i) => {
         scene.add.text(W * 0.25, y + 40 * i, `${i + 1}.`, font.normal);
         scene.add.text(W * 0.33, y + 40 * i, `${score.nickname}`, font.normal);
-        scene.add.text(W * 0.59, y + 40 * i, `${score.nb_move}`, font.normal);
-        scene.add.text(W * 0.64, y + 40 * i, `${score.elapsed_time.toFixed(2)}s`, font.normal);
+        scene.add.text(W * 0.64, y + 40 * i, `${score.experiment_payload.nb_move}`, font.normal);
+        scene.add.text(W * 0.70, y + 40 * i, `${score.experiment_payload.elapsed_time.toFixed(2)}s`, font.normal);
     });
 }
 
