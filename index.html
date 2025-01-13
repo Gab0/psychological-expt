@@ -144,12 +144,20 @@
             <br>
             Please note that this registry will be stored in your browser as a cookie.
             <br>
-            If you agree, please enter your name below:
+            If you agree, please enter your name below, along with any preferences you may have:
         </p>
        
-        <input type="text" id="username" name="username">
+        Custom username: <input type="text" id="username" name="username">
         <button id="random_username">Generate</button>
-        <button id="set_username">Store</button>
+        <div>
+            <input type="radio" id="en-us" name="language" value="en-us">
+            <label for="en-us">English (US)</label>
+        </div>
+        <div>
+            <input type="radio" id="pt-br" name="language" value="pt-br">
+            <label for="pt-br">Português (Brasil)</label>
+        </div>
+        <button id="store_settings">Store Settings</button>
 
         <p>
             You can participate in as many experiments as you like.
