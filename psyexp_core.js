@@ -181,7 +181,7 @@ export async function getHighscores(
   experimentId,
   orderExpression,
   ascending = true,
-  further_filtering = (x) => {x}
+  further_filtering = (x) => {return x}
 ) {
 
   const query = db.rpc(
