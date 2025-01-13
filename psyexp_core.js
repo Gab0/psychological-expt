@@ -91,13 +91,6 @@ export function getCookie(name) {
     return null; // Return null if the cookie is not found
 }
 
-export let nickname = getCookie("username");
-
-export let userId = getCookie("user_id");
-if (userId === null) {
-    userId = makeid(10);
-    // setCookie("user_id", userId, 365);
-}
 
 export const reloadNickname = async () => {
   const result = await db.rpc("gen_nickname").then((res) => {
@@ -106,10 +99,9 @@ export const reloadNickname = async () => {
   })
 };
 
-if (nickname === null) {
-    reloadNickname();
-}
-
+export let userId = getCookie("user_id") || makeid(10);
+export let nickname = getCookie("username") || reloadNickname();
+export let language = getCookie("language") || "pt-br";
 
 export class StandardBriefingScene extends Phaser.Scene {
     constructor(gameName, messages, sceneName, nextSceneName) {
