@@ -10,7 +10,7 @@ import { PsyExpBaseConfig,
          font
        } from '../../psyexp_core.js';
 
-const urlParams = new URLSearchParams(window.location.search);
+
 
 let moveText;
 let timerText;
@@ -34,8 +34,10 @@ class GameScene extends Phaser.Scene {
 
     create() {
 
+        const urlParams = new URLSearchParams(window.location.search);
+
         this.gameState = {
-            diskCount: parseInt(urlParams.get('ndisk'), 10) || 5,
+            diskCount: parseInt(urlParams.get('nb_disk'), 10) || 5,
             poles: [],
             disks: [],
             timestamps: [],
