@@ -15,8 +15,9 @@ This project is composed of a series of psychological experiments.
 
 - A modern single-page static .html frontend under `index.html`.
 - Have a field to select the language and user name. Typing on the username text field or clicking the language radio selector stores the variable value as cookies using methods declared in the common library.
-- Have a menu with multiple experiments. There is a button that links to the experiment, along with another button that displays information about a given experiment including a highscores table. There is a pane that displays information for the last selected experiment.
-
+- Have a table with multiple experiments. It has three columns: experiment name, short name, and action.
+- There is a information pane that displays information or highscores for specific experiments, one at a time.
+- The action column has tthrewo buttons: one that links to the experiment, another that displays information on the experiment, along with another button that shows the highscores table for that experiment.
 
 ## Experiments
 

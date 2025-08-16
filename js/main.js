@@ -1,5 +1,5 @@
  
-import { nickname, reloadNickname, setCookie, getCookie } from '../psyexp_core.js';
+import { nickname, reloadNickname, setCookie, getCookie, getHighscores } from '../psyexp_core.js';
 
 const username_input = document.getElementById('username');
 username_input.value = getCookie('username');
@@ -15,12 +15,16 @@ for (let radio of languageSelectors) {
   }
 
 const experimentInfo = {
+    rlt: {
+        title: 'Reverse Learning Task',
+        description: 'A test of cognitive flexibility. Participants must learn to choose the correct stimulus and adapt when the correct choice is reversed.'
+    },
     bart: {
-        title: 'Balloon Analogue Risk Task (BART)',
+        title: 'Balloon Analogue Risk Task',
         description: 'A measure of risk-taking behavior. Participants earn points by pumping up a balloon, but lose points if it pops.'
     },
     tmt: {
-        title: 'Trail Making Test (TMT)',
+        title: 'Trail Making Test',
         description: 'A test of visual attention and task switching. Participants connect a sequence of dots in order as quickly as possible.'
     },
     nback: {
@@ -28,11 +32,11 @@ const experimentInfo = {
         description: 'A task to measure working memory. Participants must indicate when the current stimulus matches the one from n steps earlier in the sequence.'
     },
     srtt: {
-        title: 'Serial Reaction Time Task (SRTT)',
+        title: 'Serial Reaction Time Task',
         description: 'Measures implicit motor learning. Participants respond to a series of visual cues that follow a repeating pattern.'
     },
     sdltnt: {
-        title: 'Serial-Digit Learning Test (Trials to Criterion) (SDLTNT)',
+        title: 'Serial-Digit Learning Test (Trials to Criterion)',
         description: 'A test of verbal learning and memory. Participants must recall a sequence of digits, with the sequence length increasing over trials.'
     },
     gonogo: {
@@ -56,6 +60,97 @@ const experimentInfo = {
         description: 'An expert-level version of the Tower of Hanoi puzzle with 9 disks.'
     }
 };
+
+const highscoreConfig = {
+    rlt: {
+        order: 'final_score',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.final_score}</td><td>${(score.experiment_payload.learning_target_choice_rate * 100).toFixed(0)}%</td>`,
+        header: '<th>Name</th><th>Score</th><th>Target %</th>'
+    },
+    bart: {
+        order: 'experiment_payload->>totalScore',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.totalScore.toFixed(2)}</td>`,
+        header: '<th>Name</th><th>Total Score</th>'
+    },
+    tmt: {
+        order: 'experiment_payload->>combinedTimes',
+        ascending: true,
+        render: (score) => `<td>${score.nickname}</td><td>${(score.experiment_payload.combinedTimes / 1000).toFixed(2)}s</td>`,
+        header: '<th>Name</th><th>Time (s)</th>'
+    },
+    gonogo: {
+        order: 'correct_responses',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${score.correct_responses}</td>`,
+        header: '<th>Name</th><th>Correct Responses</th>'
+    },
+    hanoi: {
+        order: 'experiment_payload->>elapsed_time',
+        ascending: true,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.nb_move}</td><td>${score.experiment_payload.elapsed_time.toFixed(2)}s</td>`,
+        header: '<th>Name</th><th>Moves</th><th>Time (s)</th>'
+    },
+    nback: {
+        order: 'experiment_payload->>winRatio',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${(score.experiment_payload.winRatio * 100).toFixed(2)}%</td>`,
+        header: '<th>Name</th><th>Win Ratio</th>'
+    },
+    sdltnt: {
+        order: 'experiment_payload->>winRatio',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${(score.experiment_payload.winRatio * 100).toFixed(2)}%</td>`,
+        header: '<th>Name</th><th>Win Ratio</th>'
+    },
+    srtt: {
+        order: 'experiment_payload->>meanReactionTime',
+        ascending: true,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.meanReactionTime.toFixed(2)}ms</td>`,
+        header: '<th>Name</th><th>Avg. Reaction Time (ms)</th>'
+    },
+    // Add other experiments here
+};
+
+document.querySelectorAll('.highscore-btn').forEach(button => {
+    button.addEventListener('click', async function() {
+        const expKey = this.getAttribute('data-exp');
+        let config = highscoreConfig[expKey];
+        let filter = null;
+
+        if (expKey.startsWith('hanoi-')) {
+            const diskCount = parseInt(expKey.split('-')[1], 10);
+            config = highscoreConfig['hanoi'];
+            filter = (q) => q.eq('experiment_payload->>nb_disk', diskCount);
+        }
+        const infoContent = document.getElementById('info-content');
+
+        if (!config) {
+            infoContent.innerHTML = '<p>Highscores not available for this experiment.</p>';
+            return;
+        }
+
+        infoContent.innerHTML = '<p>Loading highscores...</p>';
+
+        try {
+            const scores = await getHighscores(expKey.split('-')[0], config.order, config.ascending, filter);
+            if (scores && scores.length > 0) {
+                let tableHtml = `<table class="highscore-table"><thead><tr><th>Rank</th>${config.header}</tr></thead><tbody>`;
+                scores.forEach((score, index) => {
+                    tableHtml += `<tr><td>${index + 1}</td>${config.render(score)}</tr>`;
+                });
+                tableHtml += '</tbody></table>';
+                infoContent.innerHTML = tableHtml;
+            } else {
+                infoContent.innerHTML = '<p>No highscores found.</p>';
+            }
+        } catch (error) {
+            console.error('Error fetching highscores:', error);
+            infoContent.innerHTML = '<p>Could not load highscores.</p>';
+        }
+    });
+});
 
 document.querySelectorAll('.info-btn').forEach(button => {
     button.addEventListener('click', function() {

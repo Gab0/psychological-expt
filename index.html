@@ -108,6 +108,22 @@
             background-color: #f9f9f9;
         }
 
+        .highscore-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .highscore-table th, .highscore-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .highscore-table th {
+            background-color: #e7e7e7;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             body {
@@ -221,78 +237,135 @@
                 <thead>
                     <tr>
                         <th>Experiment</th>
+                        <th>Short name</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>🎈💥 Balloon Analogue Risk Task (BART)</td>
+                        <td>🔄 Reverse Learning Task</td>
+                        <td>RLT</td>
+                        <td>
+                            <button onclick="location.href='/rlt'">Start</button>
+                            <button class="info-btn" data-exp="rlt">Info</button>
+                            <button class="highscore-btn" data-exp="rlt">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🎈💥 Balloon Analogue Risk Task</td>
+                        <td>BART</td>
                         <td>
                             <button onclick="location.href='/bart'">Start</button>
                             <button class="info-btn" data-exp="bart">Info</button>
+                            <button class="highscore-btn" data-exp="bart">Highscores</button>
                         </td>
                     </tr>
                     <tr>
-                        <td>🛤 ️Trail Making Test (TMT)</td>
+                        <td>🛤️ Trail Making Test</td>
+                        <td>TMT</td>
                         <td>
                             <button onclick="location.href='/tmt'">Start</button>
                             <button class="info-btn" data-exp="tmt">Info</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>🔁 n-Back Task (n=2)</td>
-                        <td>
-                            <button onclick="location.href='/nback'">Start</button>
-                            <button class="info-btn" data-exp="nback">Info</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>⚡⚡ Serial Reaction Time Task (SRTT)</td>
-                        <td>
-                            <button onclick="location.href='/srtt'">Start</button>
-                            <button class="info-btn" data-exp="srtt">Info</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>🔢🧠 Serial-Digit Learning Test (Trials to Criterion) (SDLTNT)</td>
-                        <td>
-                            <button onclick="location.href='/sdltnt'">Start</button>
-                            <button class="info-btn" data-exp="sdltnt">Info</button>
+                            <button class="highscore-btn" data-exp="tmt">Highscores</button>
                         </td>
                     </tr>
                     <tr>
                         <td>🟦❌ Go/No-Go Task</td>
+                        <td>GoNoGo</td>
                         <td>
                             <button onclick="location.href='/gonogo'">Start</button>
                             <button class="info-btn" data-exp="gonogo">Info</button>
+                            <button class="highscore-btn" data-exp="gonogo">Highscores</button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Hanoi 3 disks 🏗️➡️</td>
+                        <td>🔁 n-Back Task</td>
+                        <td>n-Back</td>
                         <td>
-                            <button onclick="location.href='/hanoi/?ndisk=3'">Start</button>
+                            <button onclick="location.href='/nback'">Start</button>
+                            <button class="info-btn" data-exp="nback">Info</button>
+                            <button class="highscore-btn" data-exp="nback">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>⚡⚡ Serial Reaction Time Task</td>
+                        <td>SRTT</td>
+                        <td>
+                            <button onclick="location.href='/srtt'">Start</button>
+                            <button class="info-btn" data-exp="srtt">Info</button>
+                            <button class="highscore-btn" data-exp="srtt">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🔢🧠 Serial-Digit Learning Test (Trials to Criterion)</td>
+                        <td>SDLTNT</td>
+                        <td>
+                            <button onclick="location.href='/sdltnt'">Start</button>
+                            <button class="info-btn" data-exp="sdltnt">Info</button>
+                            <button class="highscore-btn" data-exp="sdltnt">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🧩 Symbol-Digit Substitution Test</td>
+                        <td>SDST</td>
+                        <td>
+                            <button onclick="location.href='/sdst'">Start</button>
+                            <button class="info-btn" data-exp="sdst">Info</button>
+                            <button class="highscore-btn" data-exp="sdst">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🃏 Wisconsin Card Sorting Test</td>
+                        <td>WCST</td>
+                        <td>
+                            <button onclick="location.href='/wcst'">Start</button>
+                            <button class="info-btn" data-exp="wcst">Info</button>
+                            <button class="highscore-btn" data-exp="wcst">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>👁️‍🗨️ Change Detection Task</td>
+                        <td>CDT</td>
+                        <td>
+                            <button onclick="location.href='/cdt'">Start</button>
+                            <button class="info-btn" data-exp="cdt">Info</button>
+                            <button class="highscore-btn" data-exp="cdt">Highscores</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🏗️ Tower of Hanoi (3 Disks)</td>
+                        <td>Hanoi</td>
+                        <td>
+                            <button onclick="location.href='/hanoi?nb_disk=3'">Start</button>
                             <button class="info-btn" data-exp="hanoi-3">Info</button>
+                            <button class="highscore-btn" data-exp="hanoi-3">Highscores</button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Hanoi 5 disks 🏗️🧩</td>
+                        <td>🏗️ Tower of Hanoi (5 Disks)</td>
+                        <td>Hanoi</td>
                         <td>
-                            <button onclick="location.href='/hanoi/?ndisk=5'">Start</button>
+                            <button onclick="location.href='/hanoi?nb_disk=5'">Start</button>
                             <button class="info-btn" data-exp="hanoi-5">Info</button>
+                            <button class="highscore-btn" data-exp="hanoi-5">Highscores</button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Hanoi 7 disks 🏗️🌀</td>
+                        <td>🏗️ Tower of Hanoi (7 Disks)</td>
+                        <td>Hanoi</td>
                         <td>
-                            <button onclick="location.href='/hanoi/?ndisk=7'">Start</button>
+                            <button onclick="location.href='/hanoi?nb_disk=7'">Start</button>
                             <button class="info-btn" data-exp="hanoi-7">Info</button>
+                            <button class="highscore-btn" data-exp="hanoi-7">Highscores</button>
                         </td>
                     </tr>
                     <tr>
-                        <td>Hanoi 9 disks 🏗️🎯</td>
+                        <td>🏗️ Tower of Hanoi (9 Disks)</td>
+                        <td>Hanoi</td>
                         <td>
-                            <button onclick="location.href='/hanoi/?ndisk=9'">Start</button>
+                            <button onclick="location.href='/hanoi?nb_disk=9'">Start</button>
                             <button class="info-btn" data-exp="hanoi-9">Info</button>
+                            <button class="highscore-btn" data-exp="hanoi-9">Highscores</button>
                         </td>
                     </tr>
                 </tbody>
@@ -335,4 +408,3 @@ Contact: <a href="mailto:contact@nutshellbiotech.com">contact@nutshellbiotech.co
 </div>
 </body>
 </html>
- 
