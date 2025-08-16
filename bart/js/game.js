@@ -29,7 +29,7 @@ class InstructionsScene extends Phaser.Scene {
 
 	create() {
 		// Adiciona a imagem de fundo
-		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(0.5);
+		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(2.5);
 
 		// Adiciona um gráfico preto semi-transparente
 		const graphics = this.add.graphics();
@@ -86,7 +86,7 @@ class GameScene extends Phaser.Scene {
 	create() {
 		scene = this;
 
-		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(0.5);
+		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(2.5);
 		this.add.text(20, 20, messageMap["TITLE"], font.largest);
 
 		balloon = this.add
