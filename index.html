@@ -63,6 +63,51 @@
             margin: 2em;
         }
 
+        .experiments-container {
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .experiment-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .experiment-list th, .experiment-list td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .experiment-list th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .experiment-list button {
+            padding: 8px 12px;
+            margin-right: 5px;
+            cursor: pointer;
+            border: 1px solid #800080;
+            background-color: white;
+            color: #800080;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .experiment-list button:hover {
+            background-color: #800080;
+            color: white;
+        }
+
+        .experiment-info-pane {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             body {
@@ -159,7 +204,7 @@
             <input type="radio" id="pt-br" name="language" value="pt-br">
             <label for="pt-br">Português (Brasil)</label>
         </div>
-        <button id="store_settings">Store Settings</button>
+
 
         <p>
             You can participate in as many experiments as you like.
@@ -170,18 +215,95 @@
             <br>
         </p>
 
-        <ul class="links">
-            <li><a href="/bart">🎈💥 Balloon Analogue Risk Task (BART)</a></li>
-            <li><a href="/tmt">🛤 ️Trail Making Test (TMT)</a></li>
-            <li><a href="/nback">🔁 n-Back Task (n=2)</a></li>
-            <li><a href="/srtt">⚡⚡ Serial Reaction Time Task (SRTT)</a></li>
-            <li><a href="/sdltnt">🔢🧠 Serial-Digit Learning Test (Trials to Criterion) (SDLTNT)</a></li>
-            <li><a href="/gonogo">🟦❌ Go/No-Go Task</a></li>
-            <li><a href="/hanoi/?ndisk=3">Hanoi 3 disks 🏗️➡️ </a></li>
-            <li><a href="/hanoi/?ndisk=5">Hanoi 5 disks 🏗️🧩</a></li>
-            <li><a href="/hanoi/?ndisk=7">Hanoi 7 disks 🏗️🌀</a></li>
-            <li><a href="/hanoi/?ndisk=9">Hanoi 9 disks 🏗️🎯</a></li>
-        </ul>
+        <div class="experiments-container">
+            <h2>Experiments</h2>
+            <table class="experiment-list">
+                <thead>
+                    <tr>
+                        <th>Experiment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🎈💥 Balloon Analogue Risk Task (BART)</td>
+                        <td>
+                            <button onclick="location.href='/bart'">Start</button>
+                            <button class="info-btn" data-exp="bart">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🛤 ️Trail Making Test (TMT)</td>
+                        <td>
+                            <button onclick="location.href='/tmt'">Start</button>
+                            <button class="info-btn" data-exp="tmt">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🔁 n-Back Task (n=2)</td>
+                        <td>
+                            <button onclick="location.href='/nback'">Start</button>
+                            <button class="info-btn" data-exp="nback">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>⚡⚡ Serial Reaction Time Task (SRTT)</td>
+                        <td>
+                            <button onclick="location.href='/srtt'">Start</button>
+                            <button class="info-btn" data-exp="srtt">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🔢🧠 Serial-Digit Learning Test (Trials to Criterion) (SDLTNT)</td>
+                        <td>
+                            <button onclick="location.href='/sdltnt'">Start</button>
+                            <button class="info-btn" data-exp="sdltnt">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>🟦❌ Go/No-Go Task</td>
+                        <td>
+                            <button onclick="location.href='/gonogo'">Start</button>
+                            <button class="info-btn" data-exp="gonogo">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hanoi 3 disks 🏗️➡️</td>
+                        <td>
+                            <button onclick="location.href='/hanoi/?ndisk=3'">Start</button>
+                            <button class="info-btn" data-exp="hanoi-3">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hanoi 5 disks 🏗️🧩</td>
+                        <td>
+                            <button onclick="location.href='/hanoi/?ndisk=5'">Start</button>
+                            <button class="info-btn" data-exp="hanoi-5">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hanoi 7 disks 🏗️🌀</td>
+                        <td>
+                            <button onclick="location.href='/hanoi/?ndisk=7'">Start</button>
+                            <button class="info-btn" data-exp="hanoi-7">Info</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Hanoi 9 disks 🏗️🎯</td>
+                        <td>
+                            <button onclick="location.href='/hanoi/?ndisk=9'">Start</button>
+                            <button class="info-btn" data-exp="hanoi-9">Info</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="experiment-info-pane">
+                <h3>Experiment Information</h3>
+                <div id="info-content">
+                    <p>Select an experiment's info button to see its details.</p>
+                </div>
+            </div>
+        </div>
 
         <p>If you are a researcher and are interested in using our psychological experiments or in developing your own experiments using our core library,
             please contact us at <a href="mailto:gabriel_scf@hotmail.com">this e-mail</a></p>
