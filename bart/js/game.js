@@ -25,6 +25,8 @@ class InstructionsScene extends Phaser.Scene {
 
 	preload() {
 		this.load.image('background', root + '/assets/fields.jpg');
+        
+		this.load.image('explosion-yelloww', root + '/assets/explosion-yelloww.png');
 	}
 
 	create() {
@@ -116,6 +118,47 @@ class GameScene extends Phaser.Scene {
 
 		balloonCounterText = this.add.text(20, H * 0.2, '', font.larger);
 
+		// Slider vertical para velocidade (parte medial esquerda)
+const sliderX = 50;             // próximo da borda esquerda
+const sliderY = H / 2 - 100;    // centralizado verticalmente
+const sliderHeight = 200;
+
+   // Fundo do slider (linha de fundo)
+   const sliderBg = this.add.graphics();
+   sliderBg.fillStyle(0x666666, 1);
+   sliderBg.fillRect(sliderX, sliderY, 10, sliderHeight);
+
+    // Handle (alvo que o jogador arrasta)
+    rateSlider = this.add.rectangle(
+	sliderX + 5,
+	sliderY + sliderHeight * (1 - (balloonPumpRate - 0.00001) / (0.0003 - 0.00001)),
+	20,
+	10,
+	0xffffff
+    ).setOrigin(0.5).setInteractive({ draggable: true });
+
+    
+
+    // Ativa o arraste
+    this.input.setDraggable(rateSlider);
+
+    this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+	if (gameObject === rateSlider) {
+		const minY = sliderY;
+		const maxY = sliderY + sliderHeight;
+		const clampedY = Phaser.Math.Clamp(dragY, minY, maxY);
+		gameObject.y = clampedY;
+
+		// Converte a posição Y para a faixa de valores (quanto mais alto, mais rápido)
+		const t = 1 - ((clampedY - minY) / sliderHeight);
+		balloonPumpRate = Phaser.Math.Linear(0.0001, 0.0003, t);
+
+		// Atualiza o texto
+		rateSliderText.setText(`Velocidade:\n${balloonPumpRate.toFixed(5)}`);
+	}
+    });
+
+
 		this.input.keyboard.on('keydown-SPACE', enablePumping, this);
 		this.input.keyboard.on('keyup-SPACE', disablePumping, this);
 		this.input.keyboard.on('keydown-ENTER', collectScore, this);
@@ -188,6 +231,10 @@ let inflateSound;
 let gameOver = false;
 let pumpCount = 0;
 
+let balloonPumpRate = 0.00005; // valor inicial da velocidade
+let rateSlider;
+let rateSliderText;
+
 let balloonScores = [];
 let balloonExplosions = [];
 
@@ -210,7 +257,7 @@ function initializeBalloonSchedule() {
 	let schedule = Array(10).fill(0).concat(Array(10).fill(1)).concat(Array(10).fill(2));
 	shuffleArray(schedule);
 	schedule = schedule.concat(Array(20).fill(0)).concat(Array(20).fill(1)).concat(Array(20).fill(2));
-	balloonSchedule = schedule.slice(0, 10);
+	balloonSchedule = schedule.slice(0, 30); // ou 60, se quiser mais balões
 }
 
 function createPumpButton() {
@@ -264,8 +311,10 @@ function setTotalScore(score) {
 }
 
 function protoPumpBalloon(msElapsed) {
-	balloonSize += gameConstants.balloonSizeIncreaseRate * msElapsed;
+	// Usa a velocidade do slider para qualquer balão
+	balloonSize += balloonPumpRate * msElapsed;
 	balloon.setScale(balloonSize);
+
 	const k = Math.round((balloonSize - gameConstants.balloonInitialSize) * gameConstants.balloonPumpMultiplier);
 	if (k > pumpCount) {
 		pumpCount = k;
@@ -283,18 +332,35 @@ function pumpBalloon() {
 }
 
 function popBalloon() {
-	popSound.play();
+    popSound.play();
 
-	balloonScores.push(0);
+    balloon.setVisible(false);
+
+    const explosion = scene.add.image(
+        balloon.x,
+        balloon.y - balloon.displayHeight / 2,
+        'explosion-yelloww'
+    );
+
+    explosion.setOrigin(0.5, 0.5);
+
+    const scale = balloon.scaleX;
+    explosion.setScale(scale * 0.5);  // Explosão menor que o balão
+
+    balloonScores.push(0);
     balloonExplosions.push(currentScore);
-	updateSessionRecord();
-   
-	resetBalloon();
-	disablePumping();
-	setLastBalloonScore(0);
+    updateSessionRecord();
 
-	currentScore = 0;
+    disablePumping();
+    setLastBalloonScore(0);
+    currentScore = 0;
+
+    scene.time.delayedCall(600, () => {
+        explosion.destroy();
+        resetBalloon();
+    });
 }
+
 
 function updateSessionRecord() {
 
@@ -331,27 +397,35 @@ function collectScore() {
 }
 
 function resetBalloon() {
-	if (gameOver) {
-		return;
-	}
+	if (gameOver) return;
+
 	disablePumping();
 
+	// Verifica se acabou a sequência de balões
+	if (currentBalloonIndex >= balloonSchedule.length) {
+		setGameOver();
+		return;
+	}
+
+	// Reset do estado do balão
 	balloonSize = gameConstants.balloonInitialSize;
 	pumpCount = 0;
-
 	currentScore = 0;
+
 	setCurrentScore(currentScore);
+
+	// Define a cor e durabilidade do próximo balão
 	currentColorIndex = balloonSchedule[currentBalloonIndex];
 	balloonDurabilityState = Array.from(Array(balloonDurabilities[currentColorIndex]).keys());
+
+	// Atualiza o balão na tela
 	balloon.setOrigin(0.5, 1.0);
 	balloon.setScale(balloonSize);
 	balloon.setTint(balloonColors[currentColorIndex]);
+	balloon.setVisible(true);
+
 	currentBalloonIndex++;
 	balloonCounterText.setText(`${currentBalloonIndex}/${balloonSchedule.length}`);
-
-	if (currentBalloonIndex > balloonSchedule.length) {
-		setGameOver();
-	}
 }
 
 function setGameOver() {
