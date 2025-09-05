@@ -105,6 +105,8 @@ class TMTScene extends Phaser.Scene {
         }
     }
 
+    // === Interações com mouse ===
+
     onPointerDown(pointer) {
         if (this.isPaused || this.isGameEnded) return;
 
@@ -139,6 +141,8 @@ class TMTScene extends Phaser.Scene {
 
         this.drawPath = [];
     }
+
+    // === Círculos ===
 
     createUniqueCircle(index, content) {
         const W = this.sys.game.config.width;
@@ -225,6 +229,8 @@ class TMTScene extends Phaser.Scene {
         this.graphics.strokePath();
     }
 
+    // === Fim de jogo ===
+
     endGame(success) {
         const midX = this.sys.game.config.width * 0.5;
         const color = success ? '#ffffff' : '#ff0000';
@@ -285,6 +291,8 @@ class TMTScene extends Phaser.Scene {
         }
     }
 }
+
+// === Inicialização ===
 
 const messageMap = await fetchMessages("pt-br", "tmt");
 
