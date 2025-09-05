@@ -1,5 +1,4 @@
-// Expects 'Phaser' to be a global variable;
-
+// Expects 'Phaser' to be a global variable
 import {
     font,
     nickname,
@@ -345,7 +344,7 @@ function popBalloon() {
     explosion.setOrigin(0.5, 0.5);
 
     const scale = balloon.scaleX;
-    explosion.setScale(scale * 0.5);  // Explosão menor que o balão
+    explosion.setScale(scale * 0.5);
 
     balloonScores.push(0);
     balloonExplosions.push(currentScore);
@@ -360,7 +359,6 @@ function popBalloon() {
         resetBalloon();
     });
 }
-
 
 function updateSessionRecord() {
 
