@@ -94,25 +94,24 @@ class TMTScene extends Phaser.Scene {
         if (!circle) return;
 
         if (this.scene.key === "SceneB") {
-            const expectedNumberIndex = this.currentStep * 2;
-            if (circle.num !== expectedNumberIndex) {
+            const expectedIndex = this.currentStep;
+            if (circle.num !== expectedIndex) {
+                if (circle.fillColor === 0x00ff00) return;
                 this.markCircleRed(circle);
                 return;
             }
 
             this.clearErrorCircle();
-
             this.lastCircle = circle;
             this.markCircleGreen(circle);
-
         } else {
             if (circle.num !== this.currentCircle) {
+                if (circle.fillColor === 0x00ff00) return;
                 this.markCircleRed(circle);
                 return;
             }
 
             this.clearErrorCircle();
-
             this.lastCircle = circle;
 
             if (this.currentCircle === 0) {
@@ -132,30 +131,16 @@ class TMTScene extends Phaser.Scene {
         this.redrawGraphics();
 
         if (this.scene.key === "SceneB") {
-            const expectedNumberIndex = this.currentStep * 2;
-            const expectedLetterIndex = expectedNumberIndex + 1;
-
             const targetCircle = this.getCircleAt(pointer.x, pointer.y);
-
-            if (
-                this.lastCircle &&
-                this.lastCircle.num === expectedNumberIndex &&
-                targetCircle &&
-                targetCircle.num === expectedLetterIndex
-            ) {
+            if (targetCircle && targetCircle.num === this.currentStep + 1) {
                 this.clearErrorCircle();
-
-                this.markCircleGreen(this.lastCircle);
                 this.markCircleGreen(targetCircle);
                 this.paths.push(this.currentPath);
                 this.currentPath = [];
-
                 this.lastCircle = targetCircle;
                 this.currentStep++;
 
-                this.isDrawing = false;
-
-                if (this.currentStep >= 13) {
+                if (this.currentStep >= this.circleData.length - 1) {
                     this.endGame(true);
                 }
             }
@@ -163,7 +148,6 @@ class TMTScene extends Phaser.Scene {
             const targetCircle = this.getCircleAt(pointer.x, pointer.y);
             if (targetCircle && targetCircle.num === this.currentCircle + 1) {
                 this.clearErrorCircle();
-
                 this.markCircleGreen(targetCircle);
                 this.paths.push(this.currentPath);
                 this.currentPath = [];
@@ -179,16 +163,9 @@ class TMTScene extends Phaser.Scene {
 
     stopDrawing(pointer) {
         if (!this.isDrawing) return;
-
-        if (this.scene.key === "SceneB") {
-            this.currentPath = [];
-            this.isDrawing = false;
-            this.redrawGraphics();
-        } else {
-            this.isDrawing = false;
-            this.currentPath = [];
-            this.redrawGraphics();
-        }
+        this.isDrawing = false;
+        this.currentPath = [];
+        this.redrawGraphics();
     }
 
     getCircleAt(x, y) {
@@ -209,26 +186,29 @@ class TMTScene extends Phaser.Scene {
     }
 
     markCircleRed(circle) {
+        if (circle.fillColor === 0x00ff00) return;
         if (this.lastErrorCircle && this.lastErrorCircle !== circle) {
-            this.lastErrorCircle.setFillStyle(0xffffff);
-            this.lastErrorCircle.setInteractive();
+            if (this.lastErrorCircle.fillColor !== 0x00ff00) {
+                this.lastErrorCircle.setFillStyle(0xffffff);
+                this.lastErrorCircle.setInteractive();
+            }
         }
-
         circle.setFillStyle(0xff0000);
         this.lastErrorCircle = circle;
     }
 
     clearErrorCircle() {
         if (this.lastErrorCircle) {
-            this.lastErrorCircle.setFillStyle(0xffffff);
-            this.lastErrorCircle.setInteractive();
+            if (this.lastErrorCircle.fillColor !== 0x00ff00) {
+                this.lastErrorCircle.setFillStyle(0xffffff);
+                this.lastErrorCircle.setInteractive();
+            }
             this.lastErrorCircle = null;
         }
     }
 
     redrawGraphics() {
         this.graphics.clear();
-
         this.graphics.lineStyle(4, 0xffffff, 1);
         for (let path of this.paths) {
             for (let i = 1; i < path.length; i++) {
@@ -238,8 +218,7 @@ class TMTScene extends Phaser.Scene {
                 ));
             }
         }
-
-        if (this.isDrawing && this.currentPath.length > 1) {
+        if (this.isDrawing && !this.isGameEnded && this.currentPath.length > 1) {
             this.graphics.lineStyle(4, 0xffffff, 1);
             for (let i = 1; i < this.currentPath.length; i++) {
                 this.graphics.strokeLineShape(new Phaser.Geom.Line(
@@ -343,4 +322,3 @@ const W = game.config.width;
 const H = game.config.height;
 const M = W * 0.5;
 const Y = H * 0.8;
-//

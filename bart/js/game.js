@@ -1,22 +1,19 @@
-// Expects 'Phaser' to be a global variable
 import {
-    font,
-    nickname,
-    PsyExpBaseConfig,
-    fetchMessages,
-    updateDatabase,
-    getHighscores,
+	font,
+	nickname,
+	PsyExpBaseConfig,
+	fetchMessages,
+	updateDatabase,
+	getHighscores,
 } from '../../psyexp_core.js';
 
 const required = [Phaser];
 
 const messageMap = await fetchMessages("en-us", "bart");
 
-//const root = document.body.getAttribute("data-root") || "";
 const root = window.location.href.replace(/\/$/, "");
 console.log("root", root);
 
-// Instructions Scene
 class InstructionsScene extends Phaser.Scene {
 	constructor() {
 		super({ key: 'InstructionsScene' });
@@ -24,20 +21,16 @@ class InstructionsScene extends Phaser.Scene {
 
 	preload() {
 		this.load.image('background', root + '/assets/fields.jpg');
-        
 		this.load.image('explosion-yelloww', root + '/assets/explosion-yelloww.png');
 	}
 
 	create() {
-		// Adiciona a imagem de fundo
 		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(2.5);
 
-		// Adiciona um gráfico preto semi-transparente
 		const graphics = this.add.graphics();
 		graphics.fillStyle(0x000000, 0.7);
 		graphics.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
 
-		// Centraliza e adiciona o texto de instruções
 		const instructionsText = messageMap["BRIEFING"];
 		const instructionsTextStyle = {
 			fontSize: '40px',
@@ -46,17 +39,16 @@ class InstructionsScene extends Phaser.Scene {
 		};
 
 		const text = this.add.text(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY,
-            instructionsText,
-            instructionsTextStyle
-        ).setOrigin(0.5);
+			this.cameras.main.centerX,
+			this.cameras.main.centerY,
+			instructionsText,
+			instructionsTextStyle
+		).setOrigin(0.5);
 
-		// Permite que o jogador avance pressionando ENTER ou clicando na tela
 		this.input.keyboard.on('keydown-ENTER', () => {
 			this.scene.start('GameScene');
 		});
-    
+
 		this.input.keyboard.on('keydown-SPACE', () => {
 			this.scene.start('GameScene');
 		});
@@ -66,7 +58,7 @@ class InstructionsScene extends Phaser.Scene {
 		});
 	}
 }
-// Game Scene
+
 class GameScene extends Phaser.Scene {
 	constructor() {
 		super({ key: 'GameScene' });
@@ -96,7 +88,6 @@ class GameScene extends Phaser.Scene {
 			.setTint(balloonColors[currentColorIndex])
 			.setInteractive();
 
-		// Make the balloon interactive and pump on click
 		balloon.on('pointerdown', enablePumping, this);
 		balloon.on('pointerup', disablePumping, this);
 
@@ -117,46 +108,37 @@ class GameScene extends Phaser.Scene {
 
 		balloonCounterText = this.add.text(20, H * 0.2, '', font.larger);
 
-		// Slider vertical para velocidade (parte medial esquerda)
-const sliderX = 50;             // próximo da borda esquerda
-const sliderY = H / 2 - 100;    // centralizado verticalmente
-const sliderHeight = 200;
+		const sliderX = 50;
+		const sliderY = H / 2 - 100;
+		const sliderHeight = 200;
 
-   // Fundo do slider (linha de fundo)
-   const sliderBg = this.add.graphics();
-   sliderBg.fillStyle(0x666666, 1);
-   sliderBg.fillRect(sliderX, sliderY, 10, sliderHeight);
+		const sliderBg = this.add.graphics();
+		sliderBg.fillStyle(0x666666, 1);
+		sliderBg.fillRect(sliderX, sliderY, 10, sliderHeight);
 
-    // Handle (alvo que o jogador arrasta)
-    rateSlider = this.add.rectangle(
-	sliderX + 5,
-	sliderY + sliderHeight * (1 - (balloonPumpRate - 0.00001) / (0.0003 - 0.00001)),
-	20,
-	10,
-	0xffffff
-    ).setOrigin(0.5).setInteractive({ draggable: true });
+		rateSlider = this.add.rectangle(
+			sliderX + 5,
+			sliderY + sliderHeight * (1 - (balloonPumpRate - 0.00001) / (0.0003 - 0.00001)),
+			20,
+			10,
+			0xffffff
+		).setOrigin(0.5).setInteractive({ draggable: true });
 
-    
+		this.input.setDraggable(rateSlider);
 
-    // Ativa o arraste
-    this.input.setDraggable(rateSlider);
+		this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+			if (gameObject === rateSlider) {
+				const minY = sliderY;
+				const maxY = sliderY + sliderHeight;
+				const clampedY = Phaser.Math.Clamp(dragY, minY, maxY);
+				gameObject.y = clampedY;
 
-    this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
-	if (gameObject === rateSlider) {
-		const minY = sliderY;
-		const maxY = sliderY + sliderHeight;
-		const clampedY = Phaser.Math.Clamp(dragY, minY, maxY);
-		gameObject.y = clampedY;
+				const t = 1 - ((clampedY - minY) / sliderHeight);
+				balloonPumpRate = Phaser.Math.Linear(0.0001, 0.0003, t);
 
-		// Converte a posição Y para a faixa de valores (quanto mais alto, mais rápido)
-		const t = 1 - ((clampedY - minY) / sliderHeight);
-		balloonPumpRate = Phaser.Math.Linear(0.0001, 0.0003, t);
-
-		// Atualiza o texto
-		rateSliderText.setText(`Velocidade:\n${balloonPumpRate.toFixed(5)}`);
-	}
-    });
-
+				rateSliderText.setText(`Velocidade:\n${balloonPumpRate.toFixed(5)}`);
+			}
+		});
 
 		this.input.keyboard.on('keydown-SPACE', enablePumping, this);
 		this.input.keyboard.on('keyup-SPACE', disablePumping, this);
@@ -167,7 +149,6 @@ const sliderHeight = 200;
 		totalScoreText = this.add.text(W * 0.85, H * 0.77, '', { fontSize: '50px', fill: '#fff' });
 		setTotalScore(totalScore);
 		initializeBalloonSchedule();
-		console.log(balloonSchedule);
 
 		resetBalloon();
 	}
@@ -192,7 +173,6 @@ const sliderHeight = 200;
 
 const config = PsyExpBaseConfig([InstructionsScene, GameScene]);
 
-// Game properties;
 const balloonColors = ['0x3366ff', '0xffff00', '0xffa077'];
 const balloonDurabilities = [128, 32, 8];
 
@@ -203,8 +183,6 @@ const gameConstants = {
 };
 
 let scene;
-
-// Buffers;
 let currentScore = 0;
 let totalScore = 0;
 let balloonSize = 1;
@@ -230,7 +208,7 @@ let inflateSound;
 let gameOver = false;
 let pumpCount = 0;
 
-let balloonPumpRate = 0.00005; // valor inicial da velocidade
+let balloonPumpRate = 0.00005;
 let rateSlider;
 let rateSliderText;
 
@@ -241,7 +219,6 @@ const game = new Phaser.Game(config);
 
 const W = game.config.width;
 const H = game.config.height;
-
 
 function shuffleArray(array) {
 	for (let i = array.length - 1; i > 0; i--) {
@@ -256,17 +233,13 @@ function initializeBalloonSchedule() {
 	let schedule = Array(10).fill(0).concat(Array(10).fill(1)).concat(Array(10).fill(2));
 	shuffleArray(schedule);
 	schedule = schedule.concat(Array(20).fill(0)).concat(Array(20).fill(1)).concat(Array(20).fill(2));
-	balloonSchedule = schedule.slice(0, 30); // ou 60, se quiser mais balões
+	balloonSchedule = schedule.slice(0, 30);
 }
 
 function createPumpButton() {
-	// Create buttons using Phaser
 	let pumpButton = this.add.image(800, 600, 'button').setInteractive();
-
 	pumpButton.setScale(0.2);
-
 	this.add.text(780, 610, 'Pump', { fontSize: '18px', fill: '#c5c5c5' });
-
 	pumpButton.on('pointerdown', enablePumping, this);
 	pumpButton.on('pointerup', disablePumping, this);
 }
@@ -276,9 +249,7 @@ function createCollectButton() {
 		.image(W * 0.9, H * 0.75, 'piggy')
 		.setTint('0x000000')
 		.setInteractive();
-
 	collectButton.setScale(0.6);
-
 	collectButton.on('pointerdown', collectScore, this);
 }
 
@@ -286,7 +257,6 @@ function enablePumping() {
 	if (gameOver) {
 		return;
 	}
-
 	if (!pumping) {
 		inflateSound.play();
 	}
@@ -297,9 +267,7 @@ function disablePumping() {
 	pumping = false;
 }
 
-function setCurrentScore(score) {
-	//currentScoreText.setText(`Current Balloon Score: R$${score.toFixed(2)}`);
-}
+function setCurrentScore(score) { }
 
 function setLastBalloonScore(score) {
 	lastBalloonScoreText.setText(messageMap['LAST_BALLOON_SCORE'].replace('XXX', score.toFixed(2)));
@@ -310,7 +278,6 @@ function setTotalScore(score) {
 }
 
 function protoPumpBalloon(msElapsed) {
-	// Usa a velocidade do slider para qualquer balão
 	balloonSize += balloonPumpRate * msElapsed;
 	balloon.setScale(balloonSize);
 
@@ -331,66 +298,55 @@ function pumpBalloon() {
 }
 
 function popBalloon() {
-    popSound.play();
+	popSound.play();
+	balloon.setVisible(false);
+	const explosion = scene.add.image(
+		balloon.x,
+		balloon.y - balloon.displayHeight / 2,
+		'explosion-yelloww'
+	);
+	explosion.setOrigin(0.5, 0.5);
+	const scale = balloon.scaleX;
+	explosion.setScale(scale * 0.5);
 
-    balloon.setVisible(false);
+	balloonScores.push(0);
+	balloonExplosions.push(currentScore);
+	updateSessionRecord();
 
-    const explosion = scene.add.image(
-        balloon.x,
-        balloon.y - balloon.displayHeight / 2,
-        'explosion-yelloww'
-    );
+	disablePumping();
+	setLastBalloonScore(0);
+	currentScore = 0;
 
-    explosion.setOrigin(0.5, 0.5);
-
-    const scale = balloon.scaleX;
-    explosion.setScale(scale * 0.5);
-
-    balloonScores.push(0);
-    balloonExplosions.push(currentScore);
-    updateSessionRecord();
-
-    disablePumping();
-    setLastBalloonScore(0);
-    currentScore = 0;
-
-    scene.time.delayedCall(600, () => {
-        explosion.destroy();
-        resetBalloon();
-    });
+	scene.time.delayedCall(600, () => {
+		explosion.destroy();
+		resetBalloon();
+	});
 }
 
 function updateSessionRecord() {
-
 	updateDatabase({
-        totalScore: totalScore,
-        balloonScores: balloonScores,
-        balloonExplosions: balloonExplosions,
-        balloonSchedule: balloonSchedule,
-    }, "bart");
-
+		totalScore: totalScore,
+		balloonScores: balloonScores,
+		balloonExplosions: balloonExplosions,
+		balloonSchedule: balloonSchedule,
+	}, "bart");
 }
 
 function collectScore() {
 	if (gameOver) {
 		return;
 	}
-
 	if (currentScore === 0) {
 		thumpSound.play();
 		return;
 	}
-
 	totalScore += currentScore;
 	setLastBalloonScore(currentScore);
 	cashRewardSound.play();
-
 	setTotalScore(totalScore);
-
 	balloonScores.push(currentScore);
-    balloonExplosions.push(0);
+	balloonExplosions.push(0);
 	updateSessionRecord();
-
 	resetBalloon();
 }
 
@@ -399,24 +355,19 @@ function resetBalloon() {
 
 	disablePumping();
 
-	// Verifica se acabou a sequência de balões
 	if (currentBalloonIndex >= balloonSchedule.length) {
 		setGameOver();
 		return;
 	}
 
-	// Reset do estado do balão
 	balloonSize = gameConstants.balloonInitialSize;
 	pumpCount = 0;
 	currentScore = 0;
-
 	setCurrentScore(currentScore);
 
-	// Define a cor e durabilidade do próximo balão
 	currentColorIndex = balloonSchedule[currentBalloonIndex];
 	balloonDurabilityState = Array.from(Array(balloonDurabilities[currentColorIndex]).keys());
 
-	// Atualiza o balão na tela
 	balloon.setOrigin(0.5, 1.0);
 	balloon.setScale(balloonSize);
 	balloon.setTint(balloonColors[currentColorIndex]);
@@ -428,18 +379,16 @@ function resetBalloon() {
 
 function setGameOver() {
 	gameOver = true;
-
 	balloon.destroy();
 	balloonCounterText.destroy();
 	currentScoreText.destroy();
-
 	helperText.setText(messageMap["GAME_OVER"]);
 
 	setTimeout(getHighscores(
-        "bart",
-        "experiment_payload -> totalScore",
-        false
-    ).then((scores) => {
+		"bart",
+		"experiment_payload -> totalScore",
+		false
+	).then((scores) => {
 		displayHighscores(scores);
 	}), 2000);
 }
