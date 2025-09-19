@@ -320,5 +320,5 @@ const game = new Phaser.Game(config);
 
 const W = game.config.width;
 const H = game.config.height;
-const M = W * 0.5;
+const M = W * 0.5; 
 const Y = H * 0.8;
