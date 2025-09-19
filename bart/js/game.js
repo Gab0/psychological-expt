@@ -401,7 +401,7 @@ function displayHighscores(scores) {
 		scene.add.text(W * 0.64, y + 40 * i, messageMap["TOTAL_SCORE"].replace('XXX', score.experiment_payload.totalScore.toFixed(2)), font.normal);
 	});
 }
-
+  
 function getRandomItem(arr) {
 	const randomIndex = Math.floor(Math.random() * arr.length);
 	const item = arr[randomIndex];
