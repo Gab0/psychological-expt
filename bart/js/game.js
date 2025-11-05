@@ -81,7 +81,7 @@ class GameScene extends Phaser.Scene {
 		scene = this;
 
 		this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(2.5);
-		this.add.text(20, 20, messageMap["TITLE"], font.largest);
+		// Removed test title from the main game view
 
 		balloon = this.add
 			.image(W * 0.5, H * 0.9, 'balloon')
