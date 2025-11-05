@@ -111,25 +111,24 @@ class GameScene extends Phaser.Scene {
 
 
 		// Slider vertical para velocidade (parte medial esquerda)
-   const sliderX = 50;             // próximo da borda esquerda
-   const sliderY = H / 2 - 100;    // centralizado verticalmente
-   const sliderHeight = 200;
+	   const sliderX = 50;             // próximo da borda esquerda
+	   const sliderY = H / 2 - 100;    // centralizado verticalmente
+	   const sliderHeight = 200;
 
-   // Fundo do slider (linha de fundo)
-   const sliderBg = this.add.graphics();
-   sliderBg.fillStyle(0x666666, 1);
-   sliderBg.fillRect(sliderX, sliderY, 10, sliderHeight);
+	   // Fundo do slider (linha de fundo)
+	   const sliderBg = this.add.graphics();
+	   sliderBg.fillStyle(0x666666, 1);
+	   sliderBg.fillRect(sliderX, sliderY, 10, sliderHeight);
 
-    // Handle (alvo que o jogador arrasta)
-    rateSlider = this.add.rectangle(
-	sliderX + 5,
-	sliderY + sliderHeight * (1 - (balloonPumpRate - 0.00001) / (0.0003 - 0.00001)),
-	20,
-	10,
-	0xffffff
-    ).setOrigin(0.5).setInteractive({ draggable: true });
-
-    
+	   // Handle (alvo que o jogador arrasta)
+	   rateSlider = this.add.rectangle(
+			sliderX + 5,
+			sliderY + sliderHeight * (1 - (balloonPumpRate - 0.00001) / (0.0003 - 0.00001)),
+			20,
+			10,
+			0xffffff
+		).setOrigin(0.5).setInteractive({ draggable: true });
+   
 
     // Ativa o arraste
     this.input.setDraggable(rateSlider);
@@ -202,6 +201,8 @@ let currentBalloonIndex = 0;
 let balloon;
 let pumping = false;
 
+let balloonCount = 10;
+
 let currentScoreText;
 let helperText;
 let totalScoreText;
@@ -245,7 +246,7 @@ function initializeBalloonSchedule() {
 	shuffleArray(schedule);
 	schedule = schedule.concat(Array(20).fill(0)).concat(Array(20).fill(1)).concat(Array(20).fill(2));
 
-	balloonSchedule = schedule.slice(0, 30); // ou 60, se quiser mais balões
+	balloonSchedule = schedule.slice(0, balloonCount);
 }
 
 function createPumpButton() {
