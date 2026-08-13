@@ -58,6 +58,10 @@ const experimentInfo = {
     'hanoi-9': {
         title: 'Tower of Hanoi (9 Disks)',
         description: 'An expert-level version of the Tower of Hanoi puzzle with 9 disks.'
+    },
+    '2d-psychometry': {
+        title: '2D Platform Psychometry',
+        description: 'A platformer game measuring risk-taking behavior. Navigate through 4 levels, collect hamburgers for points, and avoid crows and spikes. Balances time pressure with reward collection, similar to BART.'
     }
 };
 
@@ -110,7 +114,12 @@ const highscoreConfig = {
         render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.meanReactionTime.toFixed(2)}ms</td>`,
         header: '<th>Name</th><th>Avg. Reaction Time (ms)</th>'
     },
-    // Add other experiments here
+    '2d-psychometry': {
+        order: 'experiment_payload->>finalScore',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${Math.round(score.experiment_payload.finalScore)}</td><td>${score.experiment_payload.totalBalloons || 0}</td><td>${score.experiment_payload.timeRemaining?.toFixed(1) || 0}s</td>`,
+        header: '<th>Name</th><th>Score</th><th>🎈</th><th>Time</th>'
+    }
 };
 
 document.querySelectorAll('.highscore-btn').forEach(button => {
