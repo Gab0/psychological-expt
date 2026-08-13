@@ -21,8 +21,10 @@ const GameState = {
     totalCrowCollisions: 0,
     startTimestamp: null,
     levelStartTime: 0,
-    totalHamburgers: 0,  // Total hamburgers collected across all levels
-    levelHamburgers: 0   // Hamburgers collected in current level
+    // Three balloon counters as per spec line 59:
+    totalBalloonsCollected: 0,      // Total balloons collected across all levels (for score) - never decreases
+    activeBalloonsThisLevel: 0, // Balloons from current level (affects physics, usable for inflation)
+    storedBalloons: 0           // Balloons from previous levels (greyed out, inert)
 };
 
 // Level configurations
@@ -48,8 +50,9 @@ class InstructionsScene extends Phaser.Scene {
         GameState.currentTime = 0;  // Start at 0, each level adds 30s
         GameState.totalJumps = 0;
         GameState.totalCrowCollisions = 0;
-        GameState.totalHamburgers = 0;
-        GameState.levelHamburgers = 0;
+        GameState.totalBalloonsCollected = 0;
+        GameState.activeBalloonsThisLevel = 0;
+        GameState.storedBalloons = 0;
         GameState.startTimestamp = Date.now();
 
         // Background
@@ -69,17 +72,18 @@ class InstructionsScene extends Phaser.Scene {
 
         // Instructions text - Part 1
         const instructionsText =
-            "OBJECTIVE: Complete all 3 levels before time runs out!\n\n" +
+            "OBJECTIVE: Collect balloons and fly to victory!\n\n" +
             "KEYBOARD CONTROLS:\n" +
             "  • Arrow keys or A/D to move left/right\n" +
             "  • SPACE or UP arrow to jump\n" +
             "  • You can DOUBLE JUMP!\n" +
-            "  • DOWN arrow or S to FART BOOST 💨\n" +
+            "  • HOLD DOWN arrow or S to INFLATE BALLOONS 🎈\n" +
             "  • R to restart level\n\n" +
             "TOUCH CONTROLS (Mobile):\n" +
-            "  • Tap TOP of screen to JUMP\n" +
-            "  • Tap LEFT side to move LEFT\n" +
-            "  • Tap RIGHT side to move RIGHT\n\n" +
+            "  • Tap TOP area to JUMP\n" +
+            "  • Tap LEFT area to move LEFT\n" +
+            "  • Tap RIGHT area to move RIGHT\n" +
+            "  • HOLD BOTTOM area to INFLATE 🎈\n\n" +
             "LEVELS:\n" +
             "  • Level 1: 2 platforms, 20 crows\n" +
             "  • Level 2: 5 platforms, 2 holes, 30 crows\n" +
@@ -147,19 +151,20 @@ class InstructionsScene2 extends Phaser.Scene {
 
         // Instructions text - Part 2
         const instructionsText =
-            "🍔 HAMBURGERS:\n" +
-            "  • Eating makes you FATTER & SLOWER!\n" +
+            "🎈 BALLOONS:\n" +
+            "  • Collecting makes you FATTER & SLOWER!\n" +
             "  • BUT increases your final score!\n" +
-            "  • Can be used to FART BOOST!\n\n" +
-            "💨 FART BOOST:\n" +
-            "  • Requires: 1 hamburger (consumes it)\n" +
-            "  • Press DOWN to charge 0.3 sec\n" +
-            "  • BLAST diagonally upward!\n" +
-            "  • Reach high platforms!\n\n" +
+            "  • Can be inflated to FLY and WIN!\n\n" +
+            "🎈 BALLOON INFLATION:\n" +
+            "  • Requires: balloons collected this level\n" +
+            "  • HOLD DOWN to pump and inflate\n" +
+            "  • When fully inflated: FLY TO THE SKY!\n" +
+            "  • Reach the sky = LEVEL COMPLETE!\n\n" +
             "COUNTDOWN TIMER:\n" +
             "  • Each level: +30 seconds\n" +
             "  • Crow touch: -1 second\n" +
-            "  • Final score = burgers×10 + seconds×5";
+            "  • Spike touch: -2 seconds\n" +
+            "  • Final score = balloons×10 + seconds×5";
 
         this.add.text(W * 0.5, H * 0.53, instructionsText, {
             fontSize: '26px',
@@ -229,7 +234,8 @@ class GameScene extends Phaser.Scene {
         this.createPlatformTile();
         this.createDoorSprite();
         this.createClockSprite();
-        this.createHamburgerSprite();
+        this.createBalloonSprite();
+        this.createSpikeSprite();
     }
 
     createPlayerSpritesheet() {
@@ -434,36 +440,61 @@ class GameScene extends Phaser.Scene {
         graphics.destroy();
     }
 
-    createHamburgerSprite() {
+    createBalloonSprite() {
         const graphics = this.add.graphics();
 
-        // Bottom bun (golden brown)
-        graphics.fillStyle(0xd2691e, 1);
-        graphics.fillEllipse(24, 28, 40, 14);
+        // Balloon body (red/pink)
+        graphics.fillStyle(0xff3366, 1);
+        graphics.fillCircle(24, 20, 18);
 
-        // Lettuce (green)
-        graphics.fillStyle(0x32cd32, 1);
-        graphics.fillEllipse(24, 22, 36, 8);
+        // Balloon highlight (lighter pink)
+        graphics.fillStyle(0xff99bb, 0.6);
+        graphics.fillCircle(20, 14, 6);
 
-        // Patty (brown)
-        graphics.fillStyle(0x8b4513, 1);
-        graphics.fillEllipse(24, 18, 38, 10);
+        // Balloon knot (darker red)
+        graphics.fillStyle(0xcc0033, 1);
+        graphics.fillEllipse(24, 38, 6, 4);
 
-        // Cheese (yellow)
-        graphics.fillStyle(0xffd700, 1);
-        graphics.fillEllipse(24, 14, 36, 6);
+        // Balloon string (thin line)
+        graphics.lineStyle(2, 0x666666, 1);
+        graphics.lineBetween(24, 40, 24, 48);
 
-        // Top bun (golden brown with sesame seeds)
-        graphics.fillStyle(0xdaa520, 1);
-        graphics.fillEllipse(24, 10, 38, 16);
+        graphics.generateTexture('balloon', 48, 48);
+        graphics.destroy();
+    }
 
-        // Sesame seeds (white dots)
-        graphics.fillStyle(0xffffff, 1);
-        graphics.fillCircle(16, 6, 2);
-        graphics.fillCircle(24, 4, 2);
-        graphics.fillCircle(32, 6, 2);
+    createSpikeSprite() {
+        const graphics = this.add.graphics();
 
-        graphics.generateTexture('hamburger', 48, 32);
+        // Create dangerous-looking spikes (red/black)
+        graphics.fillStyle(0x666666, 1); // Gray base
+
+        // Draw multiple triangular spikes
+        const spikeWidth = 16;
+        const spikeHeight = 24;
+        const numSpikes = 4;
+
+        for (let i = 0; i < numSpikes; i++) {
+            const x = i * spikeWidth;
+            // Triangle spike
+            graphics.fillStyle(0xcc0000, 1); // Red spikes
+            graphics.beginPath();
+            graphics.moveTo(x, spikeHeight);
+            graphics.lineTo(x + spikeWidth / 2, 0);
+            graphics.lineTo(x + spikeWidth, spikeHeight);
+            graphics.closePath();
+            graphics.fillPath();
+
+            // Dark outline for definition
+            graphics.lineStyle(2, 0x000000, 1);
+            graphics.strokePath();
+        }
+
+        // Base platform
+        graphics.fillStyle(0x333333, 1);
+        graphics.fillRect(0, spikeHeight, numSpikes * spikeWidth, 8);
+
+        graphics.generateTexture('spike-tile', 64, 32);
         graphics.destroy();
     }
 
@@ -477,10 +508,18 @@ class GameScene extends Phaser.Scene {
         this.levelCrowCollisions = 0;
         this.gameState = 'playing';
         this.lastTouchJump = false;
-        GameState.levelHamburgers = 0;
-        this.playerFatness = 0; // Track how many hamburgers eaten (affects movement)
-        this.isFarting = false; // Track fart boost state
-        this.fartCooldown = false; // Prevent rapid farting
+        this.lastTouchDown = false;
+        this.spikeHitRecently = false; // Prevent rapid spike hits
+
+        // Move current level balloons to stored balloons when starting new level (spec line 32)
+        if (this.currentLevel > 1) {
+            GameState.storedBalloons += GameState.activeBalloonsThisLevel;
+        }
+        GameState.activeBalloonsThisLevel = 0;
+
+        this.isInflating = false; // Track balloon inflation state
+        this.inflationProgress = 0; // 0 to 100
+        this.inflationStartTime = 0;
 
         // Apply time bonus from previous level
         if (this.timeBonus > 0) {
@@ -511,8 +550,8 @@ class GameScene extends Phaser.Scene {
         // Spawn crows deterministically
         this.spawnCrows();
 
-        // Spawn hamburgers deterministically
-        this.spawnHamburgers();
+        // Spawn balloons deterministically
+        this.spawnBalloons();
 
         // Setup collisions
         this.setupCollisions();
@@ -604,15 +643,16 @@ class GameScene extends Phaser.Scene {
         const groundLevel = H - 64; // Top of ground blocks at this level
 
         this.ground = this.physics.add.staticGroup();
+        this.spikeGroup = this.physics.add.staticGroup();
 
         // Create ground with holes (deterministic)
         // Ground blocks extend from groundLevel downward into the "unseen area"
-        const holes = this.generateHolePositions();
+        this.holes = this.generateHolePositions(); // Store as instance property for crow AI
 
         for (let x = 0; x < 5760; x += 64) {
             const tileX = x + 32;
             // Check if this position is in a hole
-            const isHole = holes.some(hole => x >= hole.start && x < hole.end);
+            const isHole = this.holes.some(hole => x >= hole.start && x < hole.end);
 
             if (!isHole) {
                 // Stack multiple tiles vertically to create thick ground coming from below
@@ -626,9 +666,19 @@ class GameScene extends Phaser.Scene {
             }
         }
 
+        // Add spikes at the bottom of holes (spec line 27)
+        this.holes.forEach(hole => {
+            for (let x = hole.start; x < hole.end; x += 64) {
+                const spike = this.spikeGroup.create(x + 32, H - 16, 'spike-tile');
+                spike.setScale(1).refreshBody();
+                spike.body.setSize(64, 24); // Collision box for spike tips
+                spike.setData('type', 'spike');
+            }
+        });
+
         // Create floating platforms (deterministic)
-        const platforms = this.generatePlatformPositions();
-        platforms.forEach(platform => {
+        this.platforms = this.generatePlatformPositions(); // Store as instance property
+        this.platforms.forEach(platform => {
             this.createPlatform(platform.x, platform.y, platform.width);
         });
 
@@ -724,6 +774,7 @@ class GameScene extends Phaser.Scene {
         this.player.setBounce(0);
         this.player.body.setSize(50, 60);
         this.player.body.setOffset(7, 4);
+        this.player.setScale(1); // Reset scale at start of each level (spec line 30)
 
         // Start idle animation
         this.player.play('player-idle');
@@ -745,11 +796,20 @@ class GameScene extends Phaser.Scene {
         const seed = this.currentLevel * 3000;
 
         for (let i = 0; i < crowCount; i++) {
-            // Deterministic crow positioning
-            const spacing = 5400 / crowCount;
-            const baseX = 200 + spacing * i;
-            const xVariation = ((seed + i * 113) % 200) - 100;
-            const crowX = baseX + xVariation;
+            let crowX;
+            let attempts = 0;
+            const maxAttempts = 50; // Prevent infinite loops
+
+            // Ensure crow doesn't spawn in hole/spike areas (spec line 67)
+            do {
+                // Deterministic crow positioning
+                const spacing = 5400 / crowCount;
+                const baseX = 200 + spacing * i;
+                const xVariation = ((seed + i * 113 + attempts * 47) % 200) - 100;
+                crowX = baseX + xVariation;
+
+                attempts++;
+            } while (this.isInHole(crowX) && attempts < maxAttempts);
 
             const crow = this.crowGroup.create(crowX, 800, 'crow-walk-0');
             crow.setCollideWorldBounds(true);
@@ -768,54 +828,92 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    spawnHamburgers() {
-        this.hamburgerGroup = this.physics.add.group();
+    isInHole(x) {
+        // Check if X coordinate is within any hole area (spec line 67)
+        if (!this.holes) return false;
 
-        // 10 hamburgers total across all levels - distribute based on level
-        const hamburgersPerLevel = {
-            1: 3,  // Level 1 gets 3 hamburgers
-            2: 3,  // Level 2 gets 3 hamburgers
-            3: 4,  // Level 3 gets 4 hamburgers
-            4: 5   // Level 4 gets 5 hamburgers
+        return this.holes.some(hole => x >= hole.start && x <= hole.end);
+    }
+
+    spawnBalloons() {
+        this.balloonGroup = this.physics.add.group();
+
+        // Balloons across all levels - distribute based on level (spec line 31)
+        const balloonsPerLevel = {
+            1: 3,  // Level 1 gets 3 balloons
+            2: 3,  // Level 2 gets 3 balloons
+            3: 4,  // Level 3 gets 4 balloons
+            4: 5   // Level 4 gets 5 balloons
         };
 
-        const hamburgerCount = hamburgersPerLevel[this.currentLevel] || 0;
-        const seed = this.currentLevel * 5000; // Different seed for hamburgers
+        const balloonCount = balloonsPerLevel[this.currentLevel] || 0;
+        const seed = this.currentLevel * 5000; // Different seed for balloons
 
-        for (let i = 0; i < hamburgerCount; i++) {
-            // Deterministic hamburger positioning - scattered across level
-            const spacing = 5200 / (hamburgerCount + 1);
-            const baseX = 400 + spacing * i;
-            const xVariation = ((seed + i * 197) % 300) - 150;
-            const hamburgerX = baseX + xVariation;
+        for (let i = 0; i < balloonCount; i++) {
+            let balloonX, balloonY;
+            let attempts = 0;
+            const maxAttempts = 50; // Prevent infinite loops
 
-            // Random-ish height - can be on ground or on platforms
-            const heightVariation = ((seed + i * 241) % 3);
-            let hamburgerY;
+            // Keep trying to find a position that doesn't overlap platforms (spec line 69)
+            do {
+                // Deterministic balloon positioning - scattered across level
+                const spacing = 5200 / (balloonCount + 1);
+                const baseX = 400 + spacing * i;
+                const xVariation = ((seed + i * 197 + attempts * 37) % 300) - 150;
+                balloonX = baseX + xVariation;
 
-            if (heightVariation === 0) {
-                // On ground level
-                hamburgerY = this.sys.game.config.height - 100;
-            } else {
-                // Floating at various heights
-                hamburgerY = 400 + ((seed + i * 173) % 300);
-            }
+                // Height variation - balloons at different heights for different difficulties (spec line 31)
+                const heightVariation = ((seed + i * 241 + attempts * 53) % 3);
 
-            const hamburger = this.hamburgerGroup.create(hamburgerX, hamburgerY, 'hamburger');
-            hamburger.setCollideWorldBounds(true);
-            hamburger.body.allowGravity = false;  // Float in air
+                if (heightVariation === 0) {
+                    // On ground level (easy)
+                    balloonY = this.sys.game.config.height - 100;
+                } else if (heightVariation === 1) {
+                    // Medium height (moderate difficulty)
+                    balloonY = 500 + ((seed + i * 173 + attempts * 71) % 150);
+                } else {
+                    // High up (difficult - requires double jump or platforms)
+                    balloonY = 300 + ((seed + i * 173 + attempts * 71) % 150);
+                }
 
-            // Pulsing animation
+                attempts++;
+            } while (this.overlapsWithPlatform(balloonX, balloonY) && attempts < maxAttempts);
+
+            const balloon = this.balloonGroup.create(balloonX, balloonY, 'balloon');
+            balloon.setCollideWorldBounds(true);
+            balloon.body.allowGravity = false;  // Float in air
+
+            // Gentle floating animation
             this.tweens.add({
-                targets: hamburger,
-                scaleX: 1.2,
-                scaleY: 1.2,
+                targets: balloon,
+                y: balloonY - 10,
+                scaleX: 1.1,
+                scaleY: 1.1,
                 yoyo: true,
                 repeat: -1,
-                duration: 800,
+                duration: 1500,
                 ease: 'Sine.easeInOut'
             });
         }
+    }
+
+    overlapsWithPlatform(x, y) {
+        // Check if position overlaps with any platform (spec line 66)
+        if (!this.platforms) return false;
+
+        const checkRadius = 40; // Buffer around hamburger
+
+        return this.platforms.some(platform => {
+            const platformLeft = platform.x - 32;
+            const platformRight = platform.x + (platform.width * 64);
+            const platformTop = platform.y - 32;
+            const platformBottom = platform.y + 32;
+
+            return x > platformLeft - checkRadius &&
+                   x < platformRight + checkRadius &&
+                   y > platformTop - checkRadius &&
+                   y < platformBottom + checkRadius;
+        });
     }
 
     setupCollisions() {
@@ -843,11 +941,20 @@ class GameScene extends Phaser.Scene {
             this
         );
 
-        // Player vs Hamburgers
+        // Player vs Balloons
         this.physics.add.overlap(
             this.player,
-            this.hamburgerGroup,
-            this.handleHamburgerCollision,
+            this.balloonGroup,
+            this.handleBalloonCollision,
+            null,
+            this
+        );
+
+        // Player vs Spikes (spec line 27)
+        this.physics.add.overlap(
+            this.player,
+            this.spikeGroup,
+            this.handleSpikeCollision,
             null,
             this
         );
@@ -872,7 +979,8 @@ class GameScene extends Phaser.Scene {
         this.touchState = {
             left: false,
             right: false,
-            jump: false
+            jump: false,
+            down: false
         };
 
         this.input.on('pointerdown', (pointer) => {
@@ -897,11 +1005,11 @@ class GameScene extends Phaser.Scene {
         const y = pointer.y;
 
         // Determine which quadrant of the X was touched
-        // X divides screen into 4 areas:
-        // Top-left (above left diagonal): Jump (W/UP)
-        // Top-right (above right diagonal): Move Right (D)
-        // Bottom-left (below left diagonal): Move Left (A)
-        // Bottom-right (below right diagonal): Down (not used)
+        // X divides screen into 4 areas (spec line 43):
+        // Top quadrant (above both diagonals): Jump (W/UP)
+        // Right quadrant (right of center): Move Right (D)
+        // Left quadrant (left of center): Move Left (A)
+        // Bottom quadrant (below both diagonals): Down (S) for fart boost
 
         const centerX = W / 2;
         const centerY = H / 2;
@@ -914,16 +1022,20 @@ class GameScene extends Phaser.Scene {
         if (aboveLeftDiagonal && aboveRightDiagonal) {
             // Top quadrant - Jump
             this.touchState.jump = isDown;
+            this.touchState.down = false;
         } else if (aboveLeftDiagonal && !aboveRightDiagonal) {
             // Right quadrant - Move right
             this.touchState.right = isDown;
             this.touchState.left = false;
+            this.touchState.down = false;
         } else if (!aboveLeftDiagonal && aboveRightDiagonal) {
             // Left quadrant - Move left
             this.touchState.left = isDown;
             this.touchState.right = false;
+            this.touchState.down = false;
         } else {
-            // Bottom quadrant - not used
+            // Bottom quadrant - Down for fart boost (spec line 43)
+            this.touchState.down = isDown;
             if (!isDown) {
                 this.touchState.left = false;
                 this.touchState.right = false;
@@ -984,20 +1096,20 @@ class GameScene extends Phaser.Scene {
             strokeThickness: 2
         }).setOrigin(1, 0).setScrollFactor(0);
 
-        // Hamburger counter (bottom left - top item) - shows individual sprites
-        this.hamburgerContainer = this.add.container(50, this.sys.game.config.height - 160);
-        this.hamburgerContainer.setScrollFactor(0);
-        this.hamburgerSprites = []; // Array to hold individual hamburger sprites
+        // Balloon counter (bottom left - top item) - shows individual sprites
+        this.balloonContainer = this.add.container(50, this.sys.game.config.height - 160);
+        this.balloonContainer.setScrollFactor(0);
+        this.balloonSprites = []; // Array to hold individual balloon sprites
 
         // Add label
-        this.hamburgerLabel = this.add.text(0, 0, 'Burgers: ', {
+        this.balloonLabel = this.add.text(0, 0, 'Balloons: ', {
             fontSize: '28px',
-            fill: '#ffd700',
+            fill: '#ff3366',
             stroke: '#000000',
             strokeThickness: 3,
             fontWeight: 'bold'
         });
-        this.hamburgerContainer.add(this.hamburgerLabel);
+        this.balloonContainer.add(this.balloonLabel);
 
         // Crow collisions (bottom left)
         this.collisionText = this.add.text(50, this.sys.game.config.height - 120, 'Crow Hits: 0', {
@@ -1046,17 +1158,13 @@ class GameScene extends Phaser.Scene {
 
         GameState.currentTime -= 0.1;  // COUNT DOWN
 
-        // Check for game over
-        if (GameState.currentTime <= 0) {
-            GameState.currentTime = 0;
-            this.gameOver();
-            return;
-        }
+        // No game over - negative time is allowed (spec line 23, 25)
+        // The game continues even with negative time
 
         // Update UI
         this.timerText.setText(`Time: ${GameState.currentTime.toFixed(1)}s`);
 
-        // Visual warning when low
+        // Visual warning when low or negative
         if (GameState.currentTime < 10) {
             this.timerText.setFill('#ff0000');
         } else {
@@ -1070,10 +1178,8 @@ class GameScene extends Phaser.Scene {
     applyTimePenalty(seconds) {
         GameState.currentTime -= seconds;  // DEDUCT seconds (countdown)
 
-        // Ensure time doesn't go negative
-        if (GameState.currentTime < 0) {
-            GameState.currentTime = 0;
-        }
+        // Negative seconds are allowed (spec line 25)
+        // Don't prevent negative time - it affects score
 
         // Visual feedback - show dropping clock instead of red flash
         this.showDroppingClock();
@@ -1125,9 +1231,9 @@ class GameScene extends Phaser.Scene {
         }
 
         // Update player
-        this.updateFartBoost();
+        this.updateBalloonInflation();
 
-        if (!this.isFarting) {
+        if (!this.isInflating) {
             this.updatePlayerMovement();
             this.updatePlayerJump();
             this.updatePlayerAnimation();
@@ -1140,86 +1246,174 @@ class GameScene extends Phaser.Scene {
         this.updateUI();
     }
 
-    updateFartBoost() {
-        // Check if down key pressed and not on cooldown
-        const downPressed = Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-                           Phaser.Input.Keyboard.JustDown(this.input.keyboard.addKey('S'));
+    updateBalloonInflation() {
+        // Check if down key is being held (not just pressed)
+        const downKeyHeld = this.cursors.down.isDown || this.input.keyboard.addKey('S').isDown;
+        const touchDown = this.touchState.down;
 
-        // Only works when hamburgers are available (spec line 23)
-        if (downPressed && !this.isFarting && !this.fartCooldown && GameState.totalHamburgers > 0) {
-            this.isFarting = true;
-            this.fartCooldown = true;
+        const downHeld = downKeyHeld || touchDown;
 
-            // Consume one hamburger
-            GameState.totalHamburgers--;
-            this.playerFatness = Math.max(0, this.playerFatness - 1);
+        // Only works when balloons from CURRENT LEVEL are available (spec line 27, 32)
+        if (downHeld && GameState.activeBalloonsThisLevel > 0) {
+            if (!this.isInflating) {
+                // Start inflating
+                this.isInflating = true;
+                this.inflationStartTime = this.time.now;
+                this.inflationProgress = 0;
 
-            // Stop player movement for 0.3 seconds
-            this.player.setVelocity(0, 0);
+                // Stop player movement while inflating
+                this.player.setVelocity(0, 0);
 
-            // Determine facing direction
-            const facingLeft = this.player.flipX;
-            const boostDirection = facingLeft ? -1 : 1;
-
-            // Show EXPLICIT farting animation (multiple clouds)
-            const fartClouds = [];
-            for (let i = 0; i < 5; i++) {
-                const cloud = this.add.text(
-                    this.player.x + (Math.random() - 0.5) * 20,
-                    this.player.y + 20 + (Math.random() - 0.5) * 10,
-                    '💨',
-                    { fontSize: (40 + Math.random() * 30) + 'px' }
-                );
-                fartClouds.push(cloud);
-
-                this.tweens.add({
-                    targets: cloud,
-                    alpha: 0,
-                    x: cloud.x - (boostDirection * (80 + Math.random() * 40)),
-                    y: cloud.y + 40 + Math.random() * 30,
-                    scale: 1.5 + Math.random(),
-                    duration: 600 + Math.random() * 400,
-                    delay: i * 60,
-                    ease: 'Cubic.easeOut',
-                    onComplete: () => cloud.destroy()
-                });
-            }
-
-            // Show "FART!" text
-            const fartText = this.add.text(
-                this.player.x,
-                this.player.y - 40,
-                'FART!',
-                {
-                    fontSize: '36px',
-                    fill: '#ff6600',
-                    fontWeight: 'bold',
-                    stroke: '#000000',
-                    strokeThickness: 4
+                // Show "PUMPING..." text
+                if (!this.pumpingText) {
+                    this.pumpingText = this.add.text(
+                        this.player.x,
+                        this.player.y - 60,
+                        'PUMPING...',
+                        {
+                            fontSize: '28px',
+                            fill: '#ff3366',
+                            fontWeight: 'bold',
+                            stroke: '#000000',
+                            strokeThickness: 3
+                        }
+                    ).setOrigin(0.5);
                 }
-            ).setOrigin(0.5);
+
+                // Create inflation progress bar
+                if (!this.inflationBar) {
+                    this.inflationBar = this.add.graphics();
+                }
+            } else {
+                // Continue inflating
+                const elapsed = this.time.now - this.inflationStartTime;
+                this.inflationProgress = Math.min(100, (elapsed / 3000) * 100); // 3 seconds to fully inflate
+
+                // Update progress bar
+                this.inflationBar.clear();
+                this.inflationBar.fillStyle(0x000000, 0.5);
+                this.inflationBar.fillRect(this.player.x - 52, this.player.y - 90, 104, 14);
+                this.inflationBar.fillStyle(0xff3366, 1);
+                this.inflationBar.fillRect(this.player.x - 50, this.player.y - 88, this.inflationProgress, 10);
+
+                // Update pumping text position
+                if (this.pumpingText) {
+                    this.pumpingText.x = this.player.x;
+                    this.pumpingText.y = this.player.y - 60;
+                }
+
+                // Show pumping animation effects
+                if (Math.floor(elapsed / 200) > Math.floor((elapsed - 16) / 200)) {
+                    // Every 200ms, show a pump effect
+                    const pumpEffect = this.add.text(
+                        this.player.x + (Math.random() - 0.5) * 30,
+                        this.player.y - 20,
+                        '💨',
+                        { fontSize: '24px' }
+                    );
+
+                    this.tweens.add({
+                        targets: pumpEffect,
+                        alpha: 0,
+                        y: pumpEffect.y - 30,
+                        scale: 1.5,
+                        duration: 500,
+                        ease: 'Cubic.easeOut',
+                        onComplete: () => pumpEffect.destroy()
+                    });
+                }
+
+                // Check if fully inflated
+                if (this.inflationProgress >= 100) {
+                    this.launchBalloons();
+                }
+            }
+        } else {
+            // Released down key - cancel inflation
+            if (this.isInflating) {
+                this.cancelInflation();
+            }
+        }
+    }
+
+    launchBalloons() {
+        // Balloons are fully inflated - FLY TO THE SKY! (spec line 27)
+        this.isInflating = false;
+
+        // Clean up inflation UI
+        if (this.pumpingText) {
+            this.pumpingText.destroy();
+            this.pumpingText = null;
+        }
+        if (this.inflationBar) {
+            this.inflationBar.destroy();
+            this.inflationBar = null;
+        }
+
+        // Show "FLYING!" text
+        const flyText = this.add.text(
+            this.player.x,
+            this.player.y - 60,
+            '🎈 FLYING! 🎈',
+            {
+                fontSize: '42px',
+                fill: '#ff3366',
+                fontWeight: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4
+            }
+        ).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: flyText,
+            alpha: 0,
+            y: flyText.y - 100,
+            duration: 2000,
+            onComplete: () => flyText.destroy()
+        });
+
+        // Create balloon sprites around player
+        for (let i = 0; i < 5; i++) {
+            const balloonSprite = this.add.sprite(
+                this.player.x + (Math.random() - 0.5) * 60,
+                this.player.y - 40 + (Math.random() - 0.5) * 20,
+                'balloon'
+            );
+            balloonSprite.setScale(0.8);
 
             this.tweens.add({
-                targets: fartText,
+                targets: balloonSprite,
+                y: balloonSprite.y - 500,
                 alpha: 0,
-                y: fartText.y - 30,
-                duration: 300,
-                onComplete: () => fartText.destroy()
+                duration: 2000,
+                ease: 'Sine.easeOut',
+                onComplete: () => balloonSprite.destroy()
             });
+        }
 
-            // After 0.3 seconds, apply diagonal boost
-            this.time.delayedCall(300, () => {
-                // Accelerate diagonally (facing direction + up)
-                const boostSpeed = 700; // Strong boost
-                this.player.setVelocity(boostSpeed * boostDirection, -boostSpeed);
+        // Launch player upward!
+        this.player.setVelocityY(-800);
+        this.player.body.allowGravity = false; // Disable gravity
 
-                this.isFarting = false;
+        // After flying up, complete the level
+        this.time.delayedCall(1500, () => {
+            this.completeLevel();
+        });
+    }
 
-                // Reset cooldown after 0.5 seconds total
-                this.time.delayedCall(200, () => {
-                    this.fartCooldown = false;
-                });
-            });
+    cancelInflation() {
+        // Player released down key before fully inflating
+        this.isInflating = false;
+        this.inflationProgress = 0;
+
+        // Clean up inflation UI
+        if (this.pumpingText) {
+            this.pumpingText.destroy();
+            this.pumpingText = null;
+        }
+        if (this.inflationBar) {
+            this.inflationBar.destroy();
+            this.inflationBar = null;
         }
     }
 
@@ -1227,10 +1421,10 @@ class GameScene extends Phaser.Scene {
         const left = this.cursors.left.isDown || this.keyA.isDown || this.touchState.left;
         const right = this.cursors.right.isDown || this.keyD.isDown || this.touchState.right;
 
-        // Base speed is 300, proportionally decreases with hamburgers
-        // At 10 burgers: speed becomes 1/3 of original (spec line 28)
-        // Reduction per burger: (1 - 1/3) / 10 = 2/3 / 10 = 0.06667
-        const speedMultiplier = Math.max(1/3, 1 - (this.playerFatness * (2/3) / 10));
+        // Base speed is 300, proportionally decreases with CURRENT LEVEL balloons only (spec line 32, 35)
+        // At 10 balloons: speed becomes 1/3 of original
+        // Reduction per balloon: (1 - 1/3) / 10 = 2/3 / 10 = 0.06667
+        const speedMultiplier = Math.max(1/3, 1 - (GameState.activeBalloonsThisLevel * (2/3) / 10));
         const currentSpeed = 300 * speedMultiplier;
 
         if (left) {
@@ -1276,9 +1470,9 @@ class GameScene extends Phaser.Scene {
         this.lastTouchJump = this.touchState.jump;
 
         if ((jumpPressed || touchJump) && this.jumpCount < 2) {
-            // Jump speed decreases proportionally with hamburgers
-            // At 10 burgers: jump becomes 1/3 of original (spec line 28)
-            const speedMultiplier = Math.max(1/3, 1 - (this.playerFatness * (2/3) / 10));
+            // Jump speed decreases proportionally with CURRENT LEVEL balloons only (spec line 32, 35)
+            // At 10 balloons: jump becomes 1/3 of original
+            const speedMultiplier = Math.max(1/3, 1 - (GameState.activeBalloonsThisLevel * (2/3) / 10));
             const jumpVelocity = -500 * speedMultiplier;
 
             this.player.setVelocityY(jumpVelocity);
@@ -1328,25 +1522,46 @@ class GameScene extends Phaser.Scene {
             const patrolDist = crow.getData('patrolDistance');
             const lastDirectionChange = crow.getData('lastDirectionChange');
 
-            // Check if crow has exceeded patrol distance
-            const distanceFromStart = crow.x - startX;
-
             // Minimum time between direction changes (500ms for visual comfort)
             const directionChangeCooldown = 500;
 
-            // If crow exceeded patrol distance and enough time has passed, flip and constrain position
-            if (Math.abs(distanceFromStart) > patrolDist &&
+            // Check if crow is about to enter a hole (spec line 28)
+            const nextX = crow.x + (speed * direction * 0.1); // Predict next position
+            const isAboutToEnterHole = this.holes && this.holes.some(hole =>
+                nextX >= hole.start && nextX <= hole.end
+            );
+
+            // Check if crow has exceeded patrol distance
+            const distanceFromStart = crow.x - startX;
+
+            // Turn around if about to enter hole OR exceeded patrol distance
+            if ((isAboutToEnterHole || Math.abs(distanceFromStart) > patrolDist) &&
                 (currentTime - lastDirectionChange) > directionChangeCooldown) {
 
                 direction = -direction;
                 crow.setData('direction', direction);
                 crow.setData('lastDirectionChange', currentTime);
 
-                // Constrain crow to patrol boundary to prevent oscillation
-                if (distanceFromStart > 0) {
-                    crow.x = startX + patrolDist;
-                } else {
-                    crow.x = startX - patrolDist;
+                // Constrain crow position
+                if (isAboutToEnterHole) {
+                    // Stop at hole edge
+                    const nearestHole = this.holes.find(hole =>
+                        nextX >= hole.start && nextX <= hole.end
+                    );
+                    if (nearestHole) {
+                        if (direction > 0) {
+                            crow.x = nearestHole.start - 20; // Stay back from edge
+                        } else {
+                            crow.x = nearestHole.end + 20;
+                        }
+                    }
+                } else if (Math.abs(distanceFromStart) > patrolDist) {
+                    // Constrain to patrol boundary
+                    if (distanceFromStart > 0) {
+                        crow.x = startX + patrolDist;
+                    } else {
+                        crow.x = startX - patrolDist;
+                    }
                 }
             }
 
@@ -1359,16 +1574,16 @@ class GameScene extends Phaser.Scene {
         this.jumpText.setText(`Jumps: ${this.levelJumps} (Total: ${GameState.totalJumps})`);
         this.collisionText.setText(`Crow Hits: ${this.levelCrowCollisions} (Total: ${GameState.totalCrowCollisions})`);
 
-        // Update individual hamburger sprites
-        this.updateHamburgerDisplay();
+        // Update individual balloon sprites
+        this.updateBalloonDisplay();
 
-        // Update current score (burgers × time remaining)
-        const currentScore = (GameState.totalHamburgers * 10) + Math.round(GameState.currentTime * 5);
+        // Update current score (balloons collected × 10 + seconds × 5) - spec line 39, 59
+        const currentScore = (GameState.totalBalloonsCollected * 10) + Math.round(GameState.currentTime * 5);
         this.scoreText.setText(`Score: ${currentScore}`);
 
-        // Update speed indicator based on fatness
-        // Proportional reduction: at 10 burgers = 33.33% (1/3)
-        const speedPercent = Math.round((Math.max(1/3, 1 - (this.playerFatness * (2/3) / 10))) * 100);
+        // Update speed indicator based on current level balloons only (spec line 32, 59)
+        // Proportional reduction: at 10 balloons = 33.33% (1/3)
+        const speedPercent = Math.round((Math.max(1/3, 1 - (GameState.activeBalloonsThisLevel * (2/3) / 10))) * 100);
         this.speedText.setText(`Speed: ${speedPercent}%`);
 
         // Change color based on speed
@@ -1381,25 +1596,43 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    updateHamburgerDisplay() {
-        // Clear existing hamburger sprites
-        this.hamburgerSprites.forEach(sprite => sprite.destroy());
-        this.hamburgerSprites = [];
+    updateBalloonDisplay() {
+        // Clear existing balloon sprites
+        this.balloonSprites.forEach(sprite => sprite.destroy());
+        this.balloonSprites = [];
 
-        // Calculate label width to position hamburgers after it
-        const labelWidth = 150; // Approximate width of "Burgers: " text
+        // Calculate label width to position balloons after it
+        const labelWidth = 150; // Approximate width of "Balloons: " text
 
-        // Add individual hamburger sprites
-        for (let i = 0; i < GameState.totalHamburgers; i++) {
-            const hamburgerIcon = this.add.text(
+        // Display the three balloon counters (spec line 59):
+        // 1. Stored balloons from previous levels (greyed out, inert) - spec line 32
+        for (let i = 0; i < GameState.storedBalloons; i++) {
+            const balloonIcon = this.add.text(
                 labelWidth + (i * 32), // Space them 32 pixels apart
                 0,
-                '🍔',
+                '🎈',
+                {
+                    fontSize: '28px',
+                    alpha: 0.3 // Greyed out with low opacity (inert)
+                }
+            );
+            this.balloonSprites.push(balloonIcon);
+            this.balloonContainer.add(balloonIcon);
+        }
+
+        // 2. Active balloons from current level (normal brightness, affects physics, usable for inflation)
+        for (let i = 0; i < GameState.activeBalloonsThisLevel; i++) {
+            const balloonIcon = this.add.text(
+                labelWidth + ((GameState.storedBalloons + i) * 32), // Space them 32 pixels apart
+                0,
+                '🎈',
                 { fontSize: '28px' }
             );
-            this.hamburgerSprites.push(hamburgerIcon);
-            this.hamburgerContainer.add(hamburgerIcon);
+            this.balloonSprites.push(balloonIcon);
+            this.balloonContainer.add(balloonIcon);
         }
+
+        // Note: totalBalloonsCollected is used for scoring and is shown in the score display
     }
 
     handleCrowCollision(player, crow) {
@@ -1556,26 +1789,26 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    handleHamburgerCollision(player, hamburger) {
-        const hamburgerX = hamburger.x;
-        const hamburgerY = hamburger.y;
+    handleBalloonCollision(player, balloon) {
+        const balloonX = balloon.x;
+        const balloonY = balloon.y;
 
-        // Collect the hamburger
-        hamburger.destroy();
+        // Collect the balloon
+        balloon.destroy();
 
-        this.playerFatness++;
-        GameState.levelHamburgers++;
-        GameState.totalHamburgers++;
+        // Update balloon counters (spec line 59)
+        GameState.totalBalloonsCollected++;       // For scoring (spec line 39) - never decreases
+        GameState.activeBalloonsThisLevel++;  // For current level mechanics (affects physics, usable for inflation)
 
-        // Make player "dramatically fatter" by scaling up
-        const newScale = 1 + (this.playerFatness * 0.15); // Each hamburger adds 15% scale
+        // Make player "dramatically fatter" by scaling up based on CURRENT LEVEL balloons (spec line 32, 35)
+        const newScale = 1 + (GameState.activeBalloonsThisLevel * 0.15); // Each balloon adds 15% scale
         this.player.setScale(newScale);
 
         // Visual feedback - happy effect
-        this.cameras.main.flash(150, 255, 215, 0, false); // Gold flash
+        this.cameras.main.flash(150, 255, 51, 102, false); // Pink flash
 
-        // Create hamburger collection particles (golden sparkles)
-        this.createHamburgerParticles(hamburgerX, hamburgerY);
+        // Create balloon collection particles (pink sparkles)
+        this.createBalloonParticles(balloonX, balloonY);
 
         // Player bounce effect
         this.tweens.add({
@@ -1591,8 +1824,8 @@ class GameScene extends Phaser.Scene {
         const feedbackText = this.add.text(
             this.player.x,
             this.player.y - 60,
-            '🍔 YUM!',
-            { fontSize: '32px', fill: '#ffd700', fontWeight: 'bold', stroke: '#000000', strokeThickness: 3 }
+            '🎈 GOT IT!',
+            { fontSize: '32px', fill: '#ff3366', fontWeight: 'bold', stroke: '#000000', strokeThickness: 3 }
         );
 
         this.tweens.add({
@@ -1604,10 +1837,10 @@ class GameScene extends Phaser.Scene {
         });
     }
 
-    createHamburgerParticles(x, y) {
-        // Create golden sparkle particles
+    createBalloonParticles(x, y) {
+        // Create pink sparkle particles
         const particleCount = 15;
-        const colors = [0xffd700, 0xffaa00, 0xffff00]; // Gold, orange, yellow
+        const colors = [0xff3366, 0xff99bb, 0xff66aa]; // Pink, light pink, medium pink
 
         for (let i = 0; i < particleCount; i++) {
             const angle = (i / particleCount) * Math.PI * 2;
@@ -1619,10 +1852,10 @@ class GameScene extends Phaser.Scene {
             // Create star-shaped particles
             const size = 3 + Math.random() * 3;
             particle.fillCircle(0, 0, size);
-            particle.generateTexture('hamburger-particle-' + i + '-' + Date.now(), size * 2, size * 2);
+            particle.generateTexture('balloon-particle-' + i + '-' + Date.now(), size * 2, size * 2);
             particle.destroy();
 
-            const particleSprite = this.add.sprite(x, y, 'hamburger-particle-' + i + '-' + Date.now());
+            const particleSprite = this.add.sprite(x, y, 'balloon-particle-' + i + '-' + Date.now());
 
             this.tweens.add({
                 targets: particleSprite,
@@ -1636,6 +1869,49 @@ class GameScene extends Phaser.Scene {
                 onComplete: () => particleSprite.destroy()
             });
         }
+    }
+
+    handleSpikeCollision(player, spike) {
+        // Prevent multiple rapid spike hits
+        if (this.spikeHitRecently) return;
+
+        this.spikeHitRecently = true;
+
+        // Apply 2 second penalty (spec line 27)
+        this.applyTimePenalty(2);
+
+        // Send player flying to upper right diagonal (spec line 27)
+        player.setVelocity(400, -600); // Right and up
+
+        // Visual feedback - camera shake
+        this.cameras.main.shake(200, 0.008);
+
+        // Show spike hit feedback
+        const spikeText = this.add.text(
+            player.x,
+            player.y - 50,
+            '⚠️ SPIKES!',
+            {
+                fontSize: '36px',
+                fill: '#ff0000',
+                fontWeight: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4
+            }
+        );
+
+        this.tweens.add({
+            targets: spikeText,
+            alpha: 0,
+            y: spikeText.y - 40,
+            duration: 1000,
+            onComplete: () => spikeText.destroy()
+        });
+
+        // Reset spike hit flag after 1 second
+        this.time.delayedCall(1000, () => {
+            this.spikeHitRecently = false;
+        });
     }
 
     handleDoorReached(player, door) {
@@ -1763,15 +2039,15 @@ class GameScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        // Show hamburgers collected count
-        if (GameState.levelHamburgers > 0) {
+        // Show balloons collected count for this level
+        if (GameState.activeBalloonsThisLevel > 0) {
             this.add.text(
                 this.cameras.main.centerX + this.cameras.main.scrollX,
                 this.cameras.main.centerY + this.cameras.main.scrollY + 80,
-                `🍔 Hamburgers: ${GameState.levelHamburgers}`,
+                `🎈 Balloons This Level: ${GameState.activeBalloonsThisLevel}`,
                 {
                     fontSize: '36px',
-                    fill: '#ffd700',
+                    fill: '#ff3366',
                     stroke: '#000000',
                     strokeThickness: 4,
                     fontWeight: 'bold'
@@ -1791,15 +2067,15 @@ class GameScene extends Phaser.Scene {
         } else {
             // Game complete - go to results
             this.time.delayedCall(2000, () => {
-                // Final score = burgers × 10 + seconds × 5
-                const finalScore = (GameState.totalHamburgers * 10) + (GameState.currentTime * 5);
+                // Final score = balloons collected × 10 + seconds × 5 (spec line 39, 59)
+                const finalScore = (GameState.totalBalloonsCollected * 10) + (GameState.currentTime * 5);
 
                 const gameData = {
                     finalScore: finalScore,
                     timeRemaining: GameState.currentTime,
                     totalJumps: GameState.totalJumps,
                     totalCrowCollisions: GameState.totalCrowCollisions,
-                    totalHamburgers: GameState.totalHamburgers,
+                    totalBalloons: GameState.totalBalloonsCollected, // Total balloons collected for display (spec line 59)
                     completionStatus: 'completed',
                     totalElapsedTime: (Date.now() - GameState.startTimestamp) / 1000,
                     levelsCompleted: GameState.totalLevels,
@@ -1855,7 +2131,7 @@ class ResultsScene extends Phaser.Scene {
             strokeThickness: 5
         }).setOrigin(0.5);
 
-        this.add.text(W * 0.5, H * 0.35, `(${this.gameData.totalHamburgers || 0} burgers × ${this.gameData.timeRemaining.toFixed(1)}s)`, {
+        this.add.text(W * 0.5, H * 0.35, `(${this.gameData.totalBalloons || 0} balloons × ${this.gameData.timeRemaining.toFixed(1)}s)`, {
             fontSize: '28px',
             fill: '#ffffff',
             stroke: '#000000',
@@ -1865,7 +2141,7 @@ class ResultsScene extends Phaser.Scene {
         // Results display
         const results = [
             `Time Remaining: ${this.gameData.timeRemaining.toFixed(1)} seconds`,
-            `🍔 Hamburgers Collected: ${this.gameData.totalHamburgers || 0}`,
+            `🎈 Balloons Collected: ${this.gameData.totalBalloons || 0}`,
             `Total Jumps: ${this.gameData.totalJumps}`,
             `Total Crow Collisions: ${this.gameData.totalCrowCollisions}`,
             `Levels Completed: ${this.gameData.levelsCompleted}`,
@@ -1911,7 +2187,7 @@ class ResultsScene extends Phaser.Scene {
         try {
             const scores = await getHighscores(
                 '2d-psychometry',
-                'experiment_payload->finalScore',
+                'experiment_payload->>finalScore',
                 false,  // descending order (higher score is better)
                 (query) => query.limit(10)
             );
@@ -1961,7 +2237,7 @@ class ResultsScene extends Phaser.Scene {
                 const payload = score.experiment_payload;
                 let playerName = score.nickname || 'Anonymous';
                 const finalScore = payload.finalScore || 0;
-                const burgers = payload.totalHamburgers || 0;
+                const balloons = payload.totalBalloons || 0;
                 const timeRemaining = payload.timeRemaining || 0;
 
                 // Truncate long player names to prevent obstruction (max 15 chars)
@@ -1975,14 +2251,14 @@ class ResultsScene extends Phaser.Scene {
                     fill: '#ffffff'
                 }).setOrigin(0, 0.5);
 
-                // Score, burgers, time
+                // Score, balloons, time
                 this.add.text(W * 0.55, y, Math.round(finalScore), {
                     fontSize: '28px',
                     fill: '#ffd700',
                     fontWeight: 'bold'
                 }).setOrigin(0.5);
 
-                this.add.text(W * 0.75, y, burgers, {
+                this.add.text(W * 0.75, y, balloons, {
                     fontSize: '28px',
                     fill: '#ffffff'
                 }).setOrigin(0.5);
