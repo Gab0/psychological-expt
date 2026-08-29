@@ -35,9 +35,9 @@ class InstructionsScene extends Phaser.Scene {
         // Add instructions
         const instructionsText = messageMap["BRIEFING"] || 
             "In this task, you will see different shapes appear on the screen. " +
-            "Press the SPACEBAR when you see a BLUE SQUARE (Go trial) " +
-            "but do NOT press anything when you see a RED CIRCLE (No-Go trial).\n\n" +
-            "Press SPACEBAR to begin.";
+            "Press the SPACEBAR or CLICK the screen when you see a BLUE SQUARE (Go trial) " +
+            "but do NOT press or click anything when you see a RED CIRCLE (No-Go trial).\n\n" +
+            "Press SPACEBAR or CLICK anywhere to begin.";
 
         const text = this.add.text(
             this.cameras.main.centerX,
@@ -51,11 +51,11 @@ class InstructionsScene extends Phaser.Scene {
             }
         ).setOrigin(0.5);
 
-        // Start game on spacebar press
+        // Start game on spacebar press or pointer click
+        const startNext = () => this.scene.start('GameScene');
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-        this.spaceKey.on('down', () => {
-            this.scene.start('GameScene');
-        });
+        this.spaceKey.on('down', startNext);
+        this.input.once('pointerdown', startNext);
     }
 }
 
@@ -85,9 +85,10 @@ class GameScene extends Phaser.Scene {
         // Initialize trial data
         this.initializeTrials();
         
-        // Set up keyboard input
+        // Set up input (keyboard and mouse/touch pointer)
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.spaceKey.on('down', this.handleResponse, this);
+        this.input.on('pointerdown', this.handleResponse, this);
         
         // Start the first trial
         this.startTrial();
@@ -120,21 +121,19 @@ class GameScene extends Phaser.Scene {
         const trial = this.trials[this.currentTrial];
         this.isResponding = false;
         
-        // Clear any existing graphics
-        this.children.each(child => {
-            if (child.type === 'Image') {
-                child.destroy();
-            }
-        });
+        // Clear any existing graphics/text
+        this.children.each(child => child.destroy());
         
-        // Show fixation cross
-        this.add.image(400, 300, 'fixation').setScale(0.5);
+        // Show fixation cross in the center of the screen
+        const cx = this.cameras.main.centerX;
+        const cy = this.cameras.main.centerY;
+        this.add.image(cx, cy, 'fixation').setScale(0.5);
         
         // After a delay, show the stimulus
         this.time.delayedCall(1000, () => {
             this.children.each(child => child.destroy());
             this.startTime = this.time.now;
-            this.add.image(400, 300, trial.stimulus).setScale(0.5);
+            this.add.image(cx, cy, trial.stimulus).setScale(0.5);
             this.isResponding = true;
             
             // Set timeout for response window (1.5 seconds)
@@ -154,6 +153,13 @@ class GameScene extends Phaser.Scene {
         if (this.responseTimeout) {
             this.responseTimeout.destroy();
         }
+
+        // Immediately destroy stimulus images so the blue square / red circle vanishes on click/press
+        this.children.each(child => {
+            if (child.type === 'Image') {
+                child.destroy();
+            }
+        });
         
         const trial = this.trials[this.currentTrial];
         const reactionTime = this.time.now - this.startTime;
@@ -189,7 +195,8 @@ class GameScene extends Phaser.Scene {
         }
         
         this.feedbackText = this.add.text(
-            400, 400,
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
             text,
             { 
                 fontSize: '64px', 
@@ -200,6 +207,7 @@ class GameScene extends Phaser.Scene {
     }
 
     nextTrial() {
+        this.children.each(child => child.destroy());
         this.currentTrial++;
         this.time.delayedCall(500, this.startTrial, [], this);
     }
@@ -243,6 +251,7 @@ class GameScene extends Phaser.Scene {
     }
 
     showCompletionScreen() {
+        this.input.off('pointerdown', this.handleResponse, this);
         this.cameras.main.setBackgroundColor('#000000');
         this.children.each(child => child.destroy());
         
@@ -263,7 +272,7 @@ class GameScene extends Phaser.Scene {
                 .filter(r => r.reactionTime)
                 .reduce((sum, r) => sum + r.reactionTime, 0) / 
                 (results.length - omissions - falseAlarms) || 0).toFixed(0)}ms\n\n` +
-            `Press SPACEBAR to see high scores`;
+            `Click anywhere or press SPACEBAR to see high scores`;
             
         const text = this.add.text(
             this.cameras.main.centerX,
@@ -278,9 +287,11 @@ class GameScene extends Phaser.Scene {
         ).setOrigin(0.5);
         
         this.spaceKey.off('down');
-        this.spaceKey.on('down', () => {
+        const goToHighScores = () => {
             this.showHighScores();
-        });
+        };
+        this.spaceKey.on('down', goToHighScores);
+        this.input.once('pointerdown', goToHighScores);
     }
 
     async showHighScores() {
@@ -294,17 +305,30 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.setBackgroundColor('#000000');
         this.children.each(child => child.destroy());
         
+        const cx = this.cameras.main.centerX;
         let y = 100;
         const style = { font: '24px Arial', fill: '#ffffff', align: 'center' };
         
-        this.add.text(400, 50, 'High Scores', { font: '32px Arial', fill: '#ffffff' }).setOrigin(0.5);
-        this.add.text(200, 80, 'Name', style);
-        this.add.text(500, 80, 'Score', style);
+        this.add.text(cx, 50, 'High Scores', { font: '32px Arial', fill: '#ffffff' }).setOrigin(0.5);
+        this.add.text(cx - 150, 80, 'Name', style).setOrigin(0.5);
+        this.add.text(cx + 150, 80, 'Score', style).setOrigin(0.5);
         
-        scores.slice(0, 10).forEach((score, index) => {
-            this.add.text(200, y + 40 * (index + 1), `${index + 1}. ${score.participant_id || 'Anonymous'}`, style);
-            this.add.text(500, y + 40 * (index + 1), score.correct_responses || 0, style);
+        (scores || []).slice(0, 10).forEach((score, index) => {
+            this.add.text(cx - 150, y + 40 * (index + 1), `${index + 1}. ${score.participant_id || 'Anonymous'}`, style).setOrigin(0.5);
+            this.add.text(cx + 150, y + 40 * (index + 1), score.correct_responses || 0, style).setOrigin(0.5);
         });
+
+        this.spaceKey.off('down');
+        const restart = () => {
+            this.scene.start('InstructionsScene');
+        };
+
+        const rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        rKey.on('down', restart);
+        this.spaceKey.on('down', restart);
+        this.input.once('pointerdown', restart);
+
+        this.add.text(cx, this.cameras.main.height - 80, 'Click anywhere or press SPACEBAR / R to play again', { font: '20px Arial', fill: '#cccccc' }).setOrigin(0.5);
     }
 }
 
