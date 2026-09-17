@@ -6,11 +6,14 @@ import {
     fetchMessages,
     updateDatabase,
     getHighscores,
+    getCookie,
+    createRebootButton,
 } from '../../psyexp_core.js';
 
 const required = [Phaser];
 
-const messageMap = await fetchMessages("en-us", "gonogo");
+const activeLang = getCookie('language') || 'en-us';
+const messageMap = await fetchMessages(activeLang, "gonogo");
 const root = window.location.href.replace(/\/$/, "");
 
 // Instructions Scene
@@ -318,17 +321,12 @@ class GameScene extends Phaser.Scene {
             this.add.text(cx + 150, y + 40 * (index + 1), score.correct_responses || 0, style).setOrigin(0.5);
         });
 
-        this.spaceKey.off('down');
-        const restart = () => {
+        createRebootButton(this, cx, this.cameras.main.height - 80, () => {
+            this.trials = [];
+            this.currentTrial = 0;
+            this.results = [];
             this.scene.start('InstructionsScene');
-        };
-
-        const rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-        rKey.on('down', restart);
-        this.spaceKey.on('down', restart);
-        this.input.once('pointerdown', restart);
-
-        this.add.text(cx, this.cameras.main.height - 80, 'Click anywhere or press SPACEBAR / R to play again', { font: '20px Arial', fill: '#cccccc' }).setOrigin(0.5);
+        });
     }
 }
 

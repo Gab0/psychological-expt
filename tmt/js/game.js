@@ -7,7 +7,9 @@ import {
     font,
     StandardBriefingScene,
     updateDatabase,
-    getHighscores
+    getHighscores,
+    getCookie,
+    createRebootButton
 } from '../../psyexp_core.js';
 
 document.title = 'Trail Making Test (TMT)';
@@ -47,6 +49,28 @@ class TMTScene extends Phaser.Scene {
         this.input.on('pointerdown', this.startDrawing, this);
         this.input.on('pointermove', this.updateDrawing, this);
         this.input.on('pointerup', this.stopDrawing, this);
+
+        this.input.keyboard.on('keydown', (event) => {
+            if (this.isPaused || this.isGameEnded) return;
+            const keyStr = String(event.key).toUpperCase();
+            const expectedIndex = this.scene.key === "SceneB" ? this.currentStep : this.currentCircle;
+            const expectedMarker = String(this.markers[expectedIndex]).toUpperCase();
+            if (keyStr === expectedMarker || event.key === ' ' || event.key === 'Enter') {
+                const targetData = this.circleData.find(c => c.num === expectedIndex);
+                if (targetData) {
+                    this.clearErrorCircle();
+                    this.markCircleGreen(targetData.circle);
+                    this.lastCircle = targetData.circle;
+                    if (this.scene.key === "SceneB") {
+                        this.currentStep++;
+                        if (this.currentStep >= this.circleData.length - 1) this.endGame(true);
+                    } else {
+                        this.currentCircle++;
+                        if (this.currentCircle >= this.circleData.length - 1) this.endGame(true);
+                    }
+                }
+            }
+        });
     }
 
     update(time) {
@@ -271,7 +295,7 @@ class TMTScene extends Phaser.Scene {
     displayHighscores(scores) {
         let y = H * 0.23;
         let i = 1;
-        scores.map((score) => {
+        (scores || []).map((score) => {
             let v = score.experiment_payload.combinedTimes;
             if (v === undefined) return;
             this.add.text(W * 0.2, y, `${i}.`, font.larger);
@@ -279,6 +303,11 @@ class TMTScene extends Phaser.Scene {
             this.add.text(W * 0.7, y, `${(v / 1000).toFixed(2)}s`, font.larger);
             i++;
             y += H * 0.05;
+        });
+
+        createRebootButton(this, W * 0.5, H * 0.88, () => {
+            Object.keys(userMetrics).forEach(k => delete userMetrics[k]);
+            this.scene.start('BriefingScene');
         });
     }
 }
@@ -291,7 +320,8 @@ function objectMap(obj, fn) {
     return newObject;
 }
 
-const messageMap = await fetchMessages("pt-br", "tmt");
+const activeLang = getCookie('language') || 'pt-br';
+const messageMap = await fetchMessages(activeLang, "tmt");
 
 const briefing = new StandardBriefingScene(
     'Trail Making Test',

@@ -9,6 +9,8 @@ import {
   fetchMessages,
   updateDatabase,
   getHighscores,
+  getCookie,
+  createRebootButton,
 } from '../../psyexp_core.js';
 
 // ---------------- Constants ----------------
@@ -22,7 +24,8 @@ const PROB_WRONG = 0.25;
 // ---------------- Shared State ----------------
 let messages = {};
 try {
-  messages = await fetchMessages('en-us', 'rlt');
+  const activeLang = getCookie('language') || 'en-us';
+  messages = await fetchMessages(activeLang, 'rlt');
 } catch (e) {
   console.log('RLT: message fetch failed, using defaults');
   messages = {};
@@ -176,8 +179,8 @@ class BaseRLTScene extends Phaser.Scene {
     this.isAwaiting = true;
     this.trialStart = this.time.now;
 
-    // Reversal at midpoint (only in main game)
-    if (this.withReversal && this.currentTrial === Math.floor(this.totalTrials / 2) + 1) {
+    // Reversal (only in main game): at midpoint or on average once per 10 trials
+    if (this.withReversal && (this.currentTrial === Math.floor(this.totalTrials / 2) + 1 || (this.currentTrial > 1 && Math.random() < 0.1))) {
       this.stimuli[0].designatedCorrect = !this.stimuli[0].designatedCorrect;
       this.stimuli[1].designatedCorrect = !this.stimuli[1].designatedCorrect;
     }
@@ -405,11 +408,12 @@ class GameScene extends BaseRLTScene {
       y += H * 0.045;
     });
 
-    const restart = () => this.scene.start('InstructionsScene');
-    const rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-    this.add.text(W * 0.5, H * 0.92, 'Click anywhere or press R to restart', { fontSize: '18px', fill: '#ecf0f1' }).setOrigin(0.5);
-    rKey.on('down', restart);
-    this.input.once('pointerdown', restart);
+    createRebootButton(this, W * 0.5, H * 0.88, () => {
+      this.currentTrial = 0;
+      this.score = 0;
+      this.results = [];
+      this.scene.start('InstructionsScene');
+    });
   }
 }
 

@@ -18,8 +18,23 @@ This project is composed of a series of psychological experiments.
 - Have a table with multiple experiments. It has three columns: experiment name, short name, and action.
 - There is a information pane that displays information or highscores for specific experiments, one at a time.
 - The action column has tthrewo buttons: one that links to the experiment, another that displays information on the experiment, along with another button that shows the highscores table for that experiment.
+- All experiments must log the percentage of mouse-issued inputs and keyboard-issued inputs as a common parameter.
+
+
 
 ## Experiments
+
+All experiments must have:
+
+- Informative bilingual briefing messages: EN-EN/PT-BR
+- Support both mouse clicks and keyboard to navigate play the game.
+- Metrics collection and storage in the database.
+- Highscores display, with names, core scores for each experiments, and the trial date.
+- After highscores, there must be a button to reboot the test.
+- The reboot button layout and visuals must match the experiment theme and vibe. This button must not overlap the highscores display!
+- All the variables must be cleared when rebooting.
+
+Many experiments are not defined in this section!
 
 ### rlt
 
@@ -83,3 +98,16 @@ Reverse Learning Task (RLT): two-choice probabilistic learning with a mid-task r
 - __Implementation files__
   - `rlt/index.html` (Phaser 3.55.2, Supabase client loaded; module script)
   - `rlt/js/game.js` (scenes: Instructions, Practice, Game; uses `PsyExpBaseConfig`, `fetchMessages`, `updateDatabase`, `getHighscores` from `psyexp_core.js`)
+
+
+### srtt
+
+- Right before the experiment, must have a countdown with all lights off for the player to prepare himself. Only then the first light will turn on!
+
+
+### bart
+
+- Must have a left bar that controls the air pumping speed of the balloon. Ensure it is movable in mobile and PC as well
+- The value of the left bar on every pump must be recorded in the output structure. Both in the actual float value and in bar throttle in percentage.
+- Ensure the explosion animation has at least three moving frames.
+- Currency: '$' for EN, 'R$' for PT-BR.

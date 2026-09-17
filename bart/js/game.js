@@ -5,11 +5,15 @@ import {
 	fetchMessages,
 	updateDatabase,
 	getHighscores,
+	getCookie,
+	createRebootButton,
 } from '../../psyexp_core.js';
 
 const required = [Phaser];
 
-const messageMap = await fetchMessages("en-us", "bart");
+const activeLang = getCookie('language') || 'en-us';
+const currencySymbol = activeLang === 'pt-br' ? 'R$' : '$';
+const messageMap = await fetchMessages(activeLang, 'bart');
 
 const root = window.location.href.replace(/\/$/, "");
 console.log("root", root);
@@ -111,47 +115,62 @@ class GameScene extends Phaser.Scene {
 
 
 		// Slider vertical para velocidade (parte medial esquerda)
-	   const sliderX = 50;             // próximo da borda esquerda
-	   const sliderY = H / 2 - 100;    // centralizado verticalmente
-	   const sliderHeight = 200;
+		const sY = SLIDER_START_Y;
+		const sH = SLIDER_HEIGHT;
 
-	   // Fundo do slider (linha de fundo)
-	   const sliderBg = this.add.graphics();
-	   sliderBg.fillStyle(0x666666, 1);
-	   sliderBg.fillRect(sliderX, sliderY, 10, sliderHeight);
+		// Label above slider
+		this.add.text(SLIDER_X, sY - 45, messageMap['SPEED_LABEL'] || 'Speed', {
+			fontSize: '22px', fill: '#ffffff', fontStyle: 'bold'
+		}).setOrigin(0.5, 0.5);
 
-	   // Handle (alvo que o jogador arrasta)
-	   rateSlider = this.add.rectangle(
-			sliderX + 5,
-			sliderY + sliderHeight * (1 - (balloonPumpRate - 0.00001) / (0.0003 - 0.00001)),
-			20,
-			10,
-			0xffffff
-		).setOrigin(0.5).setInteractive({ draggable: true });
-   
+		// Slider track background
+		const sliderBg = this.add.graphics();
+		sliderBg.fillStyle(0x444444, 0.9);
+		sliderBg.fillRoundedRect(SLIDER_X - SLIDER_TRACK_W / 2, sY, SLIDER_TRACK_W, sH, 8);
+		sliderBg.lineStyle(2, 0xaaaaaa, 1);
+		sliderBg.strokeRoundedRect(SLIDER_X - SLIDER_TRACK_W / 2, sY, SLIDER_TRACK_W, sH, 8);
 
-    // Ativa o arraste
-    this.input.setDraggable(rateSlider);
+		// Handle (enlarged for mobile touch)
+		const initialT = Phaser.Math.Clamp(
+			(balloonPumpRate - 0.0001) / (0.0003 - 0.0001), 0, 1
+		);
+		rateSlider = this.add.rectangle(
+			SLIDER_X,
+			sY + sH * (1 - initialT),
+			SLIDER_HANDLE_W,
+			SLIDER_HANDLE_H,
+			0x44aaff
+		).setOrigin(0.5).setInteractive({ draggable: true, useHandCursor: true });
+		rateSlider.setStrokeStyle(2, 0xffffff);
 
-    this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
-	if (gameObject === rateSlider) {
-		const minY = sliderY;
-		const maxY = sliderY + sliderHeight;
-		const clampedY = Phaser.Math.Clamp(dragY, minY, maxY);
-		gameObject.y = clampedY;
+		// Rate text below slider
+		rateSliderText = this.add.text(SLIDER_X, sY + sH + 25, `${balloonPumpRate.toFixed(5)}`, {
+			fontSize: '18px', fill: '#ffffff'
+		}).setOrigin(0.5, 0);
 
-		// Converte a posição Y para a faixa de valores (quanto mais alto, mais rápido)
-		const t = 1 - ((clampedY - minY) / sliderHeight);
-		balloonPumpRate = Phaser.Math.Linear(0.0001, 0.0003, t);
+		// Enable drag
+		this.input.setDraggable(rateSlider);
 
-		// Atualiza o texto
-		rateSliderText.setText(`Velocidade:\n${balloonPumpRate.toFixed(5)}`);
-	}
-    });
+		this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+			if (gameObject === rateSlider) {
+				const minY = sY;
+				const maxY = sY + sH;
+				const clampedY = Phaser.Math.Clamp(dragY, minY, maxY);
+				gameObject.y = clampedY;
 
+				const t = 1 - ((clampedY - minY) / sH);
+				balloonPumpRate = Phaser.Math.Linear(0.0001, 0.0003, t);
+
+				rateSliderText.setText(`${balloonPumpRate.toFixed(5)}`);
+			}
+		});
+
+		// Keyboard controls
 		this.input.keyboard.on('keydown-SPACE', enablePumping, this);
 		this.input.keyboard.on('keyup-SPACE', disablePumping, this);
 		this.input.keyboard.on('keydown-ENTER', collectScore, this);
+		this.input.keyboard.on('keydown-UP', () => { adjustSlider(0.05); });
+		this.input.keyboard.on('keydown-DOWN', () => { adjustSlider(-0.05); });
 
 		createCollectButton.bind(this)();
 
@@ -226,11 +245,38 @@ let rateSliderText;
 
 let balloonScores = [];
 let balloonExplosions = [];
+let pumpRates = [];
+let pumpThrottlePercentages = [];
+let currentBalloonPumpRates = [];
+let currentBalloonPumpThrottlePercentages = [];
+let balloonPumpRates = [];
+let balloonPumpThrottlePercentages = [];
 
 const game = new Phaser.Game(config);
 
 const W = game.config.width;
 const H = game.config.height;
+
+// Slider dimension constants (depend on H)
+const SLIDER_X = 60;
+const SLIDER_START_Y = H * 0.3;
+const SLIDER_HEIGHT = 300;
+const SLIDER_TRACK_W = 30;
+const SLIDER_HANDLE_W = 50;
+const SLIDER_HANDLE_H = 30;
+
+function getThrottlePct(rate) {
+	const pct = ((rate - 0.0001) / 0.0002) * 100;
+	return parseFloat(Phaser.Math.Clamp(pct, 0, 100).toFixed(2));
+}
+
+function adjustSlider(delta) {
+	const currentT = 1 - ((rateSlider.y - SLIDER_START_Y) / SLIDER_HEIGHT);
+	const newT = Phaser.Math.Clamp(currentT + delta, 0, 1);
+	rateSlider.y = SLIDER_START_Y + SLIDER_HEIGHT * (1 - newT);
+	balloonPumpRate = Phaser.Math.Linear(0.0001, 0.0003, newT);
+	rateSliderText.setText(`${balloonPumpRate.toFixed(5)}`);
+}
 
 function shuffleArray(array) {
 	for (let i = array.length - 1; i > 0; i--) {
@@ -283,11 +329,23 @@ function disablePumping() {
 function setCurrentScore(score) { }
 
 function setLastBalloonScore(score) {
-	lastBalloonScoreText.setText(messageMap['LAST_BALLOON_SCORE'].replace('XXX', score.toFixed(2)));
+	const rawMsg = messageMap['LAST_BALLOON_SCORE'] || 'Last Score: XXX';
+	const formattedVal = score.toFixed(2);
+	if (rawMsg.includes('XXX')) {
+		lastBalloonScoreText.setText(rawMsg.replace('XXX', formattedVal));
+	} else {
+		lastBalloonScoreText.setText(`${rawMsg}: ${currencySymbol} ${formattedVal}`);
+	}
 }
 
 function setTotalScore(score) {
-	totalScoreText.setText(messageMap['TOTAL_SCORE'].replace('XXX', score.toFixed(2)));
+	const rawMsg = messageMap['TOTAL_SCORE'] || '$XXX';
+	const formattedVal = score.toFixed(2);
+	if (rawMsg.includes('XXX')) {
+		totalScoreText.setText(rawMsg.replace('XXX', formattedVal));
+	} else {
+		totalScoreText.setText(`${rawMsg}: ${currencySymbol} ${formattedVal}`);
+	}
 }
 
 function protoPumpBalloon(msElapsed) {
@@ -306,6 +364,11 @@ function protoPumpBalloon(msElapsed) {
 function pumpBalloon() {
 	currentScore += 0.05;
 	setCurrentScore(currentScore);
+	const throttlePct = getThrottlePct(balloonPumpRate);
+	pumpRates.push(balloonPumpRate);
+	pumpThrottlePercentages.push(throttlePct);
+	currentBalloonPumpRates.push(balloonPumpRate);
+	currentBalloonPumpThrottlePercentages.push(throttlePct);
 	const m = getRandomItem(balloonDurabilityState);
 	if (m === 0) {
 		popBalloon();
@@ -315,28 +378,91 @@ function pumpBalloon() {
 function popBalloon() {
 	popSound.play();
 	balloon.setVisible(false);
-	const explosion = scene.add.image(
-		balloon.x,
-		balloon.y - balloon.displayHeight / 2,
-		'explosion-yelloww'
-	);
-	explosion.setOrigin(0.5, 0.5);
+
+	const expX = balloon.x;
+	const expY = balloon.y - balloon.displayHeight / 2;
 	const scale = balloon.scaleX;
-	explosion.setScale(scale * 0.5);
+
+	// Create explosion sprite for 3-frame animation
+	const explosion = scene.add.image(expX, expY, 'explosion-yelloww');
+	explosion.setOrigin(0.5, 0.5);
+	explosion.setScale(0);
+	explosion.setAlpha(1);
+
+	// Frame 1 (0-150ms): Flash-in — quick scale up with bright white tint
+	scene.tweens.add({
+		targets: explosion,
+		scaleX: scale * 0.5,
+		scaleY: scale * 0.5,
+		duration: 150,
+		ease: 'Back.easeOut',
+		onStart: () => { explosion.setTint(0xffffff); },
+		onComplete: () => {
+			// Frame 2 (150-350ms): Expansion with rotation wobble, tint shift
+			explosion.clearTint();
+			scene.tweens.add({
+				targets: explosion,
+				scaleX: scale * 0.8,
+				scaleY: scale * 0.8,
+				angle: { from: -15, to: 15 },
+				duration: 200,
+				ease: 'Sine.easeInOut',
+				onComplete: () => {
+					// Frame 3 (350-600ms): Dissipation — scale up and fade out
+					scene.tweens.add({
+						targets: explosion,
+						scaleX: scale * 1.2,
+						scaleY: scale * 1.2,
+						alpha: 0,
+						angle: 0,
+						duration: 250,
+						ease: 'Quad.easeOut',
+						onComplete: () => {
+							explosion.destroy();
+							resetBalloon();
+						}
+					});
+				}
+			});
+		}
+	});
+
+	// Debris particles flying outward
+	const particleCount = 10;
+	const debrisColors = [0xff4444, 0xffaa00, 0xffff00, 0xff6600, 0xffcc00];
+	for (let i = 0; i < particleCount; i++) {
+		const angle = (Math.PI * 2 * i) / particleCount;
+		const radius = (80 + Math.random() * 120) * scale;
+		const particle = scene.add.circle(
+			expX, expY,
+			4 + Math.random() * 6,
+			debrisColors[i % debrisColors.length]
+		);
+		scene.tweens.add({
+			targets: particle,
+			x: expX + Math.cos(angle) * radius,
+			y: expY + Math.sin(angle) * radius,
+			alpha: 0,
+			scaleX: 0.2,
+			scaleY: 0.2,
+			duration: 400 + Math.random() * 200,
+			ease: 'Quad.easeOut',
+			delay: 100,
+			onComplete: () => { particle.destroy(); }
+		});
+	}
 
 	balloonScores.push(0);
 	balloonExplosions.push(currentScore);
+	balloonPumpRates.push([...currentBalloonPumpRates]);
+	balloonPumpThrottlePercentages.push([...currentBalloonPumpThrottlePercentages]);
+	currentBalloonPumpRates = [];
+	currentBalloonPumpThrottlePercentages = [];
 	updateSessionRecord();
 
 	disablePumping();
 	setLastBalloonScore(0);
 	currentScore = 0;
-
-	scene.time.delayedCall(600, () => {
-		explosion.destroy();
-		resetBalloon();
-	});
-
 }
 
 
@@ -346,6 +472,10 @@ function updateSessionRecord() {
 		balloonScores: balloonScores,
 		balloonExplosions: balloonExplosions,
 		balloonSchedule: balloonSchedule,
+		pumpRates: pumpRates,
+		pumpThrottlePercentages: pumpThrottlePercentages,
+		balloonPumpRates: balloonPumpRates,
+		balloonPumpThrottlePercentages: balloonPumpThrottlePercentages,
 	}, "bart");
 }
 
@@ -363,6 +493,10 @@ function collectScore() {
 	setTotalScore(totalScore);
 	balloonScores.push(currentScore);
 	balloonExplosions.push(0);
+	balloonPumpRates.push([...currentBalloonPumpRates]);
+	balloonPumpThrottlePercentages.push([...currentBalloonPumpThrottlePercentages]);
+	currentBalloonPumpRates = [];
+	currentBalloonPumpThrottlePercentages = [];
 	updateSessionRecord();
 	resetBalloon();
 }
@@ -406,22 +540,130 @@ function setGameOver() {
 	currentScoreText.destroy();
 	helperText.setText(messageMap["GAME_OVER"]);
 
-	setTimeout(getHighscores(
-		"bart",
-		"experiment_payload -> totalScore",
-		false
-	).then((scores) => {
-		displayHighscores(scores);
-	}), 2000);
+	setTimeout(() => {
+		getHighscores(
+			"bart",
+			"experiment_payload -> totalScore",
+			false
+		).then((scores) => {
+			displayHighscores(scores);
+		});
+	}, 2000);
 }
 
 function displayHighscores(scores) {
-	const highscoreText = scene.add.text(W * 0.22, H * 0.23, messageMap["HIGHSCORES_TITLE"], font.normal);
-	let y = H * 0.28;
-	scores.map((score, i) => {
-		scene.add.text(W * 0.28, y + 40 * i, `${i + 1}. ${score.nickname}`, font.normal);
-		scene.add.text(W * 0.64, y + 40 * i, messageMap["TOTAL_SCORE"].replace('XXX', score.experiment_payload.totalScore.toFixed(2)), font.normal);
+	// Dark translucent container panel for contrast against background image
+	const cardW = W * 0.7;
+	const cardH = H * 0.78;
+	const cardX = (W - cardW) / 2;
+	const cardY = (H - cardH) / 2;
+
+	const cardBg = scene.add.graphics();
+	cardBg.fillStyle(0x0f172a, 0.88); // Dark slate background with 88% opacity
+	cardBg.fillRoundedRect(cardX, cardY, cardW, cardH, 20);
+	cardBg.lineStyle(3, 0x38bdf8, 0.9); // Sky blue border
+	cardBg.strokeRoundedRect(cardX, cardY, cardW, cardH, 20);
+
+	// Title
+	const rawTitle = messageMap["HIGHSCORES_TITLE"] || 'HIGHSCORES';
+	const titleText = rawTitle.trim().replace(/:$/, '');
+	scene.add.text(W * 0.5, cardY + 30, titleText, {
+		fontSize: '42px',
+		fill: '#38bdf8',
+		fontStyle: 'bold'
+	}).setOrigin(0.5, 0);
+
+	// Column Headers (Tighter horizontal spacing, larger font)
+	const headerY = cardY + 100;
+	const headerStyle = { fontSize: '30px', fill: '#ffd700', fontStyle: 'bold' };
+
+	const colRank = W * 0.22;
+	const colName = W * 0.30;
+	const colScore = W * 0.52;
+	const colDate = W * 0.68;
+
+	scene.add.text(colRank, headerY, '#', headerStyle).setOrigin(0.5, 0);
+	scene.add.text(colName, headerY, activeLang === 'pt-br' ? 'NOME' : 'NAME', headerStyle).setOrigin(0, 0);
+	scene.add.text(colScore, headerY, activeLang === 'pt-br' ? 'PONTUAÇÃO' : 'SCORE', headerStyle).setOrigin(0, 0);
+	scene.add.text(colDate, headerY, activeLang === 'pt-br' ? 'DATA' : 'DATE', headerStyle).setOrigin(0, 0);
+
+	// Divider line under headers
+	const div = scene.add.graphics();
+	div.lineStyle(2, 0x334155, 1);
+	div.lineBetween(cardX + 40, headerY + 45, cardX + cardW - 40, headerY + 45);
+
+	// Table Rows (Larger readable font, 7 rows max)
+	let y = headerY + 60;
+	const rowStyle = { fontSize: '26px', fill: '#f8fafc' };
+	const topScores = (scores || []).slice(0, 7);
+
+	topScores.forEach((scoreObj, i) => {
+		const nick = scoreObj.nickname || 'Anonymous';
+		const scoreVal = scoreObj.experiment_payload?.totalScore ?? scoreObj.experiment_payload ?? 0;
+		const numVal = typeof scoreVal === 'number' ? scoreVal.toFixed(2) : scoreVal;
+		const rawTotalMsg = messageMap['TOTAL_SCORE'] || '$XXX';
+		const formattedScore = rawTotalMsg.includes('XXX') ? rawTotalMsg.replace('XXX', numVal) : `${currencySymbol} ${numVal}`;
+
+		let dateStr = 'N/A';
+		if (scoreObj.db_timestamp) {
+			dateStr = new Date(scoreObj.db_timestamp).toISOString().split('T')[0];
+		}
+
+		scene.add.text(colRank, y, `${i + 1}`, rowStyle).setOrigin(0.5, 0);
+		scene.add.text(colName, y, nick, rowStyle).setOrigin(0, 0);
+		scene.add.text(colScore, y, formattedScore, rowStyle).setOrigin(0, 0);
+		scene.add.text(colDate, y, dateStr, rowStyle).setOrigin(0, 0);
+		y += 48;
 	});
+
+	// Balloon-Themed Reboot Button positioned safely inside card bottom
+	createThemedRebootButton(scene, W * 0.5, cardY + cardH - 55, () => {
+		currentScore = 0;
+		totalScore = 0;
+		currentBalloonIndex = 0;
+		balloonScores = [];
+		balloonExplosions = [];
+		pumpRates = [];
+		pumpThrottlePercentages = [];
+		currentBalloonPumpRates = [];
+		currentBalloonPumpThrottlePercentages = [];
+		balloonPumpRates = [];
+		balloonPumpThrottlePercentages = [];
+		gameOver = false;
+		scene.scene.start('InstructionsScene');
+	});
+}
+
+function createThemedRebootButton(scene, x, y, onRebootCallback) {
+	if (!scene || !scene.add) return;
+	const button = scene.add.rectangle(x, y, 320, 65, 0xff5733, 1).setInteractive({ useHandCursor: true }).setOrigin(0.5);
+	button.setStrokeStyle(4, 0xffd700);
+
+	const rebootLabel = activeLang === 'pt-br' ? '🎈 REINICIAR TESTE' : '🎈 REBOOT TEST';
+	const text = scene.add.text(x, y, rebootLabel, { fontSize: '26px', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+
+	button.on('pointerover', () => {
+		button.setFillStyle(0xff7043);
+		button.setScale(1.06);
+		text.setScale(1.06);
+	});
+	button.on('pointerout', () => {
+		button.setFillStyle(0xff5733);
+		button.setScale(1.0);
+		text.setScale(1.0);
+	});
+	button.on('pointerdown', () => {
+		if (onRebootCallback) onRebootCallback();
+	});
+
+	if (scene.input && scene.input.keyboard) {
+		const rKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+		rKey.once('down', () => {
+			if (onRebootCallback) onRebootCallback();
+		});
+	}
+
+	return { button, text };
 }
   
 function getRandomItem(arr) {

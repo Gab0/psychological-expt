@@ -7,6 +7,8 @@ import { PsyExpBaseConfig,
          nickname,
          fetchMessages,
          getHighscores,
+         getCookie,
+         createRebootButton,
          font
        } from '../../psyexp_core.js';
 
@@ -16,7 +18,8 @@ let moveText;
 let timerText;
 
 let scene = null;
-const messageMap = await fetchMessages("pt-br", "hanoi");
+const activeLang = getCookie('language') || 'pt-br';
+const messageMap = await fetchMessages(activeLang, "hanoi");
 
 
 class GameScene extends Phaser.Scene {
@@ -148,6 +151,44 @@ class GameScene extends Phaser.Scene {
 
         moveText = this.add.text(W * 0.1, 16, 'Moves: 0', { fontSize: '32px', fill: '#fff' });
         timerText = this.add.text(W * 0.1, 50, 'Time: 0', { fontSize: '32px', fill: '#fff' });
+        this.add.text(W * 0.1, 84, 'Keyboard: Press 1-3 to select source/target pole. Press R to reset.', { fontSize: '18px', fill: '#aaa' });
+
+        let selectedSourcePole = null;
+        this.input.keyboard.on('keydown', (event) => {
+            if (event.key === 'r' || event.key === 'R') {
+                triggerReboot();
+                return;
+            }
+            if (['1', '2', '3'].includes(event.key)) {
+                const poleIdx = parseInt(event.key, 10) - 1;
+                if (selectedSourcePole === null) {
+                    const disk = getTopDisk(poleIdx);
+                    if (disk) {
+                        selectedSourcePole = poleIdx;
+                        disk.setTint(0xffff00);
+                    }
+                } else {
+                    const sourceDisk = getTopDisk(selectedSourcePole);
+                    if (sourceDisk) {
+                        sourceDisk.clearTint();
+                        const targetTopDisk = getTopDisk(poleIdx);
+                        if (!targetTopDisk || sourceDisk.width < targetTopDisk.width) {
+                            if (selectedSourcePole !== poleIdx) {
+                                sourceDisk.x = this.gameState.poles[poleIdx].x;
+                                sourceDisk.y = Y - getDisksOnPole(poleIdx) * 30;
+                                this.gameState.moveCount++;
+                                this.gameState.timestamps.push(new Date());
+                                moveText.setText('Moves: ' + this.gameState.moveCount);
+                                if (checkWinCondition()) {
+                                    triggerWin(this);
+                                }
+                            }
+                        }
+                    }
+                    selectedSourcePole = null;
+                }
+            }
+        });
 
         this.gameState.startTime = new Date();
         this.gameState.timer = this.time.addEvent({ delay: 100, callback: updateTimer.bind(this), callbackScope: this, loop: true });
@@ -225,11 +266,15 @@ function getElapsedTime() {
 function displayHighscores(scores) {
     const highscoreText = scene.add.text(W * 0.18, H * 0.23, messageMap["HIGHSCORES_TITLE"], font.larger);
     let y = H * 0.28;
-    scores.map((score, i) => {
+    (scores || []).map((score, i) => {
         scene.add.text(W * 0.25, y + 40 * i, `${i + 1}.`, font.normal);
         scene.add.text(W * 0.33, y + 40 * i, `${score.nickname}`, font.normal);
         scene.add.text(W * 0.64, y + 40 * i, `${score.experiment_payload.nb_move}`, font.normal);
         scene.add.text(W * 0.70, y + 40 * i, `${score.experiment_payload.elapsed_time.toFixed(2)}s`, font.normal);
+    });
+
+    createRebootButton(scene, W * 0.5, H * 0.88, () => {
+        scene.scene.start('GameScene');
     });
 }
 

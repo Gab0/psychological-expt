@@ -62,6 +62,22 @@ const experimentInfo = {
     '2d-psychometry': {
         title: '2D Platform Psychometry',
         description: 'A platformer game measuring risk-taking behavior. Navigate through 4 levels, collect hamburgers for points, and avoid crows and spikes. Balances time pressure with reward collection, similar to BART.'
+    },
+    cdt: {
+        title: 'Change Detection Task',
+        description: 'Measures visual working memory capacity. Participants detect subtle visual changes between array presentations.'
+    },
+    sdst: {
+        title: 'Symbol-Digit Substitution Test',
+        description: 'Measures processing speed and executive function by mapping geometric symbols to digits.'
+    },
+    wcst: {
+        title: 'Wisconsin Card Sorting Test',
+        description: 'Assesses executive function, abstract reasoning, and set-shifting abilities by sorting cards according to hidden changing rules.'
+    },
+    'diving-risk': {
+        title: 'Dinosaur Egg Diving Risk',
+        description: 'A deep-sea diving risk-taking experiment. Diver retrieves dinosaur eggs while balancing oxygen limits and depth risk.'
     }
 };
 
@@ -69,7 +85,7 @@ const highscoreConfig = {
     rlt: {
         order: 'final_score',
         ascending: false,
-        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.final_score}</td><td>${(score.experiment_payload.learning_target_choice_rate * 100).toFixed(0)}%</td>`,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.final_score}</td><td>${(score.experiment_payload.learning_target_choice_rate ?? 0).toFixed(0)}%</td>`,
         header: '<th>Name</th><th>Score</th><th>Target %</th>'
     },
     bart: {
@@ -119,6 +135,30 @@ const highscoreConfig = {
         ascending: false,
         render: (score) => `<td>${score.nickname}</td><td>${Math.round(score.experiment_payload.finalScore)}</td><td>${score.experiment_payload.totalBalloons || 0}</td><td>${score.experiment_payload.timeRemaining?.toFixed(1) || 0}s</td>`,
         header: '<th>Name</th><th>Score</th><th>🎈</th><th>Time</th>'
+    },
+    cdt: {
+        order: 'experiment_payload->>accuracy',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${(score.experiment_payload.accuracy * 100).toFixed(0)}%</td>`,
+        header: '<th>Name</th><th>Accuracy</th>'
+    },
+    sdst: {
+        order: 'experiment_payload->>score',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.score}</td>`,
+        header: '<th>Name</th><th>Score</th>'
+    },
+    wcst: {
+        order: 'experiment_payload->>categoriesCompleted',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${score.experiment_payload.categoriesCompleted}</td><td>${score.experiment_payload.perseverativeErrors || 0}</td>`,
+        header: '<th>Name</th><th>Categories</th><th>Errors</th>'
+    },
+    'diving-risk': {
+        order: 'experiment_payload->>finalScore',
+        ascending: false,
+        render: (score) => `<td>${score.nickname}</td><td>${Math.round(score.experiment_payload.finalScore)}</td><td>${score.experiment_payload.eggsBanked || 0}</td>`,
+        header: '<th>Name</th><th>Score</th><th>Eggs</th>'
     }
 };
 

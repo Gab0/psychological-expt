@@ -6,10 +6,13 @@ import {
     fetchMessages,
     updateDatabase,
     getHighscores,
+    getCookie,
+    createRebootButton,
 } from '../../psyexp_core.js';
 
 const required = [Phaser];
-const messageMap = await fetchMessages("en-us", "2d-psychometry");
+const activeLang = getCookie('language') || 'en-us';
+const messageMap = await fetchMessages(activeLang, "2d-psychometry");
 const root = window.location.href.replace(/\/$/, "");
 
 // Global game state
@@ -2271,16 +2274,16 @@ class ResultsScene extends Phaser.Scene {
                 y += 50;
             });
 
-            // Instructions
-            this.add.text(W * 0.5, H - 80,
-                'Press R to restart',
-                {
-                    fontSize: '28px',
-                    fill: '#ffff00',
-                    stroke: '#000000',
-                    strokeThickness: 3
-                }
-            ).setOrigin(0.5);
+            createRebootButton(this, W * 0.5, H - 80, () => {
+                GameState.currentLevel = 1;
+                GameState.currentTime = 0;
+                GameState.totalJumps = 0;
+                GameState.totalCrowCollisions = 0;
+                GameState.totalBalloonsCollected = 0;
+                GameState.activeBalloonsThisLevel = 0;
+                GameState.storedBalloons = 0;
+                this.scene.start('InstructionsScene');
+            });
 
         } catch (error) {
             console.error('Failed to load highscores:', error);

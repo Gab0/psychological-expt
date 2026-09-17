@@ -8,6 +8,9 @@ BUCKET :=  s3://psychological-experiments
 
 update:
 	aws s3 sync . s3://psychological-experiments/ --profile=home --exclude "*.sql" --exclude "*spec.md" --delete --exclude ".git/*" --exclude ".mypy*" --exclude "*.py"
+	aws cloudfront create-invalidation --distribution-id=EUZ9F2EA9Z6W0 --paths /* --profile=home --no-cli-pager
+	$(MAKE) update-specific
+
 
 update-specific:
 	@$(call updateGame,"sdltnt")

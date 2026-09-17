@@ -191,17 +191,64 @@ export async function getHighscores(
   return data;
 }
 
-export function displayHighscores(W, H, scores, renderSingleScore) {
+export function displayHighscores(sceneOrW, HOrW, scoresOrH, renderSingleScoreOrScores, renderSingleScore) {
+  let scene, W, H, scores, renderFn;
+  if (typeof sceneOrW === 'object' && sceneOrW && sceneOrW.add) {
+    scene = sceneOrW;
+    W = HOrW;
+    H = scoresOrH;
+    scores = renderSingleScoreOrScores;
+    renderFn = renderSingleScore;
+  } else {
+    scene = this;
+    W = sceneOrW;
+    H = HOrW;
+    scores = scoresOrH;
+    renderFn = renderSingleScoreOrScores;
+  }
+  if (!scene || !scene.add) return;
+
   let y = H * 0.23;
   let i = 1;
-  scores.map((score) => {
-    const v = renderSingleScore(score);
+  (scores || []).forEach((score) => {
+    const v = renderFn ? renderFn(score) : undefined;
     if (v === undefined) return;
 
-    this.add.text(W * 0.2, y, `${i}.`, font.larger);
-    this.add.text(W * 0.3, y, `${score.nickname}`, font.larger);
-    this.add.text(W * 0.7, y, v, font.larger);
+    scene.add.text(W * 0.2, y, `${i}.`, font.larger);
+    scene.add.text(W * 0.3, y, `${score.nickname || 'Anonymous'}`, font.larger);
+    scene.add.text(W * 0.7, y, v, font.larger);
     i++;
     y += H * 0.05;
   });
-};
+}
+
+export function createRebootButton(scene, x, y, onRebootCallback) {
+  if (!scene || !scene.add) return;
+  const button = scene.add.rectangle(x, y, 260, 60, 0x27ae60).setInteractive().setOrigin(0.5);
+  button.setStrokeStyle(3, 0xffffff);
+  const text = scene.add.text(x, y, '🔄 REBOOT TEST', { fontSize: '26px', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+
+  button.on('pointerover', () => {
+    button.setFillStyle(0x2ecc71);
+    button.setScale(1.05);
+    text.setScale(1.05);
+  });
+  button.on('pointerout', () => {
+    button.setFillStyle(0x27ae60);
+    button.setScale(1.0);
+    text.setScale(1.0);
+  });
+  button.on('pointerdown', () => {
+    if (onRebootCallback) onRebootCallback();
+  });
+
+  if (scene.input && scene.input.keyboard) {
+    const rKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    rKey.once('down', () => {
+      if (onRebootCallback) onRebootCallback();
+    });
+  }
+
+  return { button, text };
+}
+
